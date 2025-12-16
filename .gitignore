@@ -1,0 +1,27 @@
+/*
+.*
+
+
+# INCLUDE BACK
+# ------------
+
+# DIRECTORIES
+# ------------
+
+!validators
+
+# DIRECTORIES
+# ============
+
+# FILES
+# ------------
+
+!.gitignore
+!go.mod
+!main.go
+
+# FILES
+# ============
+
+# INCLUDE BACK
+# ============
