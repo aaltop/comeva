@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	headerValidation "comeva/validators/header"
+	"flag"
 	"fmt"
 	"os"
 )
@@ -77,8 +78,61 @@ func processCommitMessageFile(fileName string) (yamlLines []string) {
 	return
 }
 
+var flagSet = flag.NewFlagSet("", flag.ContinueOnError)
+
+var helpFlag = flagSet.Bool("help", false, "print help")
+var configFile = flagSet.String("configFile", "", "file path for configuration file")
+var commitFile = flagSet.String("commitFile", "", "file path for commit file")
+
+
 func main() {
-	var yamlLines []string = processCommitMessageFile("example.txt")
+	flagSet.Parse(os.Args[1:])
+	var argsOutput = flagSet.Output()
+	var helpMessage = func() {
+		var output = argsOutput
+		fmt.Fprint(output, "CoMeVa (Commit Message Validator) is a tool for validating git commit messages.\n\n")
+		
+		fmt.Fprintln(output, "Usage:")
+		fmt.Fprintln(output, "  comeva [flags] --commitFile <commit_file>")
+		fmt.Fprintln(output, "  comeva [flags] <commit_message>")
+		fmt.Fprintln(output, "    <commit_message> specifies the commit message as a string.")
+		fmt.Fprintln(output, "  comeva --help")
+
+
+		fmt.Fprintln(output)
+
+		fmt.Fprint(output, "Options:\n")
+		flagSet.PrintDefaults()
+	}
+
+	flagSet.Usage = helpMessage
+
+	var args []string = flagSet.Args()
+	var commitFileSpecified = len(*commitFile) > 0
+	var numArgs = len(args)
+	switch {
+	case (numArgs < 1 && !commitFileSpecified) || (numArgs == 1 && commitFileSpecified):
+		fmt.Fprint(argsOutput, "Error: specify either a commit message string or a commit message file.\n\n")
+		helpMessage()
+		return
+	case numArgs != 1 && !commitFileSpecified:
+		fmt.Fprintf(argsOutput, "Error: expected one argument, got %d\n\n", len(args))
+		helpMessage()
+		return
+	case *helpFlag:
+		helpMessage()
+		return
+	}
+
+	if numArgs == 1 {
+		var commitMessage string = args[0]
+		fmt.Printf("Message:\n%s\n", commitMessage)
+	}
+
+	if len(*commitFile) < 1 {
+		return
+	}
+	var yamlLines []string = processCommitMessageFile(*commitFile)
 	fmt.Println("yaml:")
 	for _, yamlLine := range yamlLines {
 		fmt.Println(yamlLine)
