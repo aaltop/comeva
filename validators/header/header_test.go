@@ -12,7 +12,7 @@ var validator = NewHeaderValidator([]string{"feat"}, []string{"Add"}, [2]int{}, 
 
 // The validate method works.
 func TestHeaderValidatorValidate(t *testing.T) {
-	var headerValidator validators.Validator = validator
+	var headerValidator validators.ReaderValidator = validator
 	var headerReader = strings.NewReader("feat: Add search")
 
 	var err error = headerValidator.Validate(headerReader)
