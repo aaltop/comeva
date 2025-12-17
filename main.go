@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"comeva/validators"
+	headerValidation "comeva/validators/header"
 	"fmt"
 	"os"
 )
@@ -37,9 +37,9 @@ func processCommitMessage(scanner *bufio.Scanner) (yamlLines []string) {
 
 		switch i {
 		case 0:
-			var headerValidator = validators.NewHeaderValidator([]string{"feat", "fix"}, []string{"Add", "Remove", "Fix"}, [2]int{}, [2]int{})
-			var header, err = headerValidator.ValidateString(line)
-			fmt.Printf("Header: %v\nerror: %v\n", header, err)
+			var headerValidator = headerValidation.NewHeaderValidator([]string{"feat", "fix"}, []string{"Add", "Remove", "Fix"}, [2]int{}, [2]int{})
+			var err = headerValidator.ValidateString(line)
+			fmt.Printf("Header: %v\nerror: %v\n", headerValidator.Header, err)
 			// // TODO: do this with a regex
 			// var location, heading, hasLocation = strings.Cut(line, ":")
 			// location = strings.ReplaceAll(location, " ", "")

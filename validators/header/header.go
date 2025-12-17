@@ -1,8 +1,11 @@
-package validators
+// Package header contains functionalities for validating the header
+// of a git commit message.
+package header
 
 import (
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"slices"
 	"strings"
@@ -38,16 +41,19 @@ type HeaderValidator struct {
 	verbs []string
 	// minimum and maximum.
 	headerLength, contentLength [2]int
+
+	// The content of the header in an easy accessible format.
+	Header *Header
 }
 
 // Help returns a string that describes what the header is expected
 // to look like.
-func (h HeaderValidator) Help() string {
+func (validator HeaderValidator) Help() string {
 	return "Header should be of the format [<location>: ]<description>" +
-		fmt.Sprintf("	<location>: (%s)\n", strings.Join(h.scopes, "|")) +
+		fmt.Sprintf("	<location>: (%s)\n", strings.Join(validator.scopes, "|")) +
 		"	<description>: <verb> <content>\n" +
-		fmt.Sprintf("	<verb>: (%s)\n", strings.Join(h.verbs, "|")) +
-		fmt.Sprintf("	<content>: Any content, length [%d, %d]", h.contentLength[0], h.contentLength[1])
+		fmt.Sprintf("	<verb>: (%s)\n", strings.Join(validator.verbs, "|")) +
+		fmt.Sprintf("	<content>: Any content, length [%d, %d]", validator.contentLength[0], validator.contentLength[1])
 }
 
 type InvalidError struct{}
@@ -121,62 +127,79 @@ func NewHeaderValidator(scopes, verbs []string, headerLength, contentLength [2]i
 	return h
 }
 
-// func (h *HeaderValidator) Validate(reader io.Reader) error {
-// 	// var matches = header.FindStringSubmatch(possibleHeader)
-// 	// if matches == nil {
-// 	// 	h.Problems = append(h.Problems, "The header was invalid.")
-// 	// 	return h, InvalidError{}
-// 	// }
-// 	// var loc = matches[header.SubexpIndex("location")]
-// 	// if !location.MatchString(loc) {
-// 	// 	h.Problems = append(h.Problems, fmt.Sprintf("Invalid location: %s", loc))
-// 	// }
-// 	// var msg = matches[header.SubexpIndex("message")]
-// }
+func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
+	var stringBuilder = strings.Builder{}
+	var buffer = make([]byte, 256)
+	var readerError error
+	var bytesRead int
+	for {
+		bytesRead, readerError = reader.Read(buffer)
+
+		if bytesRead > 0 {
+			stringBuilder.Grow(bytesRead)
+			stringBuilder.Write(buffer[:bytesRead])
+		}
+
+		// bytes should be handled BEFORE handling the error, according
+		// to the documentation of io.Reader
+		if readerError != nil {
+			break
+		}
+	}
+
+	if !(readerError == io.EOF) {
+		return readerError
+	}
+
+	return validator.ValidateString(stringBuilder.String())
+}
 
 // ValidateString Validates the header of a commit message, returning
 // the different parts of the header, and a non-nil error if validation
 // failed at some point.
-func (h *HeaderValidator) ValidateString(possibleHeader string) (header *Header, e error) {
+func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error) {
 
-	header = &Header{}
-	e = InvalidError{}
-	var hasError = false
+	// e = InvalidError{}
+	validator.Header = &Header{}
+	var errs []error
 
-	var matches = h.header.FindStringSubmatch(possibleHeader)
+	var matches = validator.header.FindStringSubmatch(possibleHeader)
 	if matches == nil {
-		hasError = true
-		return header, InvalidError{}
+		return InvalidError{}
 	}
 
 	// TODO: move these to separate validation functions
-	if len(possibleHeader) < h.headerLength[0] || len(possibleHeader) > h.headerLength[1] {
-		hasError = true
-		e = errors.Join(e, InvalidLengthError{ExpectedMin: h.headerLength[0], ExpectedMax: h.headerLength[1], Received: len(possibleHeader)})
+	if len(possibleHeader) < validator.headerLength[0] || len(possibleHeader) > validator.headerLength[1] {
+		errs = append(errs, InvalidLengthError{ExpectedMin: validator.headerLength[0], ExpectedMax: validator.headerLength[1], Received: len(possibleHeader)})
 	}
 
-	var scope = matches[h.header.SubexpIndex("scope")]
-	if !slices.Contains(h.scopes, scope) {
-		hasError = true
-		e = errors.Join(e, InvalidScopeError{Expected: h.scopes, Received: scope})
+	var scope = matches[validator.header.SubexpIndex("scope")]
+	if !slices.Contains(validator.scopes, scope) {
+		errs = append(errs, InvalidScopeError{Expected: validator.scopes, Received: scope})
 	} else {
-		header.Scope = scope
+		validator.Header.Scope = scope
 	}
 
-	var desc = matches[h.header.SubexpIndex("description")]
+	var desc = matches[validator.header.SubexpIndex("description")]
 	var verb, content, found = strings.Cut(desc, " ")
 	if !found ||
-		!slices.Contains(h.verbs, verb) ||
-		(len(content) < h.contentLength[0] || len(content) > h.contentLength[1]) {
-		hasError = true
-		e = errors.Join(e, InvalidDescriptionError{Received: desc, contentMin: h.contentLength[0], contentMax: h.contentLength[1], Verbs: h.verbs})
+		!slices.Contains(validator.verbs, verb) ||
+		(len(content) < validator.contentLength[0] || len(content) > validator.contentLength[1]) {
+		errs = append(errs,
+			InvalidDescriptionError{
+				Received:   desc,
+				contentMin: validator.contentLength[0],
+				contentMax: validator.contentLength[1],
+				Verbs:      validator.verbs})
 	} else {
-		header.Description = desc
-		header.Verb = verb
+		validator.Header.Description = desc
+		validator.Header.Verb = verb
 	}
 
-	if !hasError {
+	if len(errs) == 0 {
 		e = nil
+	} else {
+		e = errors.Join(errs...)
 	}
-	return header, e
+	return e
 }

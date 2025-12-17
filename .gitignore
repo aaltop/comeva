@@ -19,6 +19,7 @@
 !.gitignore
 !go.mod
 !main.go
+!README.md
 
 # FILES
 # ============
