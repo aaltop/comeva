@@ -16,6 +16,18 @@ import (
 // var header = regexp.MustCompile(`\A(?:(?<location>frontend|backend): )?(?<message>(?<verb>Add|Remove|Fix) .{3,50})\z`)
 var header = regexp.MustCompile(`\A(?:(?<scope>.*): )?(?<description>.*)\z`)
 
+// Description represents the description part of a commit message
+type Description struct {
+	// Verb describes the action taken by a commit.
+	Verb string
+	// Content is the rest of the description.
+	Content string
+}
+
+func (desc Description) String() string {
+	return fmt.Sprintf("%s %s", desc.Verb, desc.Content)
+}
+
 // Header represents parts of a commit message header.
 type Header struct {
 	// Scope denotes where the changes were made.
@@ -23,17 +35,18 @@ type Header struct {
 	// Verb denotes the action of the commit (what happened).
 	Verb string
 	// Description contains the message (<verb> <content>) of the header.
-	Description string
+	Description Description
 }
 
 func (h Header) String() string {
 	if len(h.Scope) == 0 {
-		return h.Description
+		return h.Description.String()
 	}
-	return fmt.Sprintf("%s: %s", h.Scope, h.Description)
+	return fmt.Sprintf("%s: %s", h.Scope, h.Description.String())
 }
 
 type HeaderValidator struct {
+	// Regexp used to pick out parts of the header.
 	header *regexp.Regexp
 	// Accepted words for scope.
 	scopes []string
@@ -43,12 +56,12 @@ type HeaderValidator struct {
 	headerLength, contentLength [2]int
 
 	// The content of the header in an easy accessible format.
-	Header *Header
+	Header Header
 }
 
 // Help returns a string that describes what the header is expected
 // to look like.
-func (validator HeaderValidator) Help() string {
+func (validator *HeaderValidator) Help() string {
 	return "Header should be of the format [<location>: ]<description>" +
 		fmt.Sprintf("	<location>: (%s)\n", strings.Join(validator.scopes, "|")) +
 		"	<description>: <verb> <content>\n" +
@@ -127,6 +140,9 @@ func NewHeaderValidator(scopes, verbs []string, headerLength, contentLength [2]i
 	return h
 }
 
+// Validate validates the header of a commit message, returning
+// a non-nil error if validation
+// failed at some point. This sets the Header of the validator.
 func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
 	var stringBuilder = strings.Builder{}
 	var buffer = make([]byte, 256)
@@ -154,13 +170,60 @@ func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateString(stringBuilder.String())
 }
 
+// Validate the length of the header.
+func (validator *HeaderValidator) ValidateHeaderLength(possibleHeader string) (e error) {
+	e = nil
+	if len(possibleHeader) < validator.headerLength[0] || len(possibleHeader) > validator.headerLength[1] {
+		e = InvalidLengthError{ExpectedMin: validator.headerLength[0], ExpectedMax: validator.headerLength[1], Received: len(possibleHeader)}
+	}
+	return e
+}
+
+// Validate the scope (of Conventional commits syntax).
+func (validator *HeaderValidator) ValidateScope(scope string) (e error) {
+	e = nil
+	if !slices.Contains(validator.scopes, scope) {
+		e = InvalidScopeError{Expected: validator.scopes, Received: scope}
+	}
+	return e
+}
+
+
+// Attempt extraction of constituent parts from the description of
+// a commit message. No validation is performed.
+func (validator *HeaderValidator) ProcessDescription(description string) (desc Description, e error) {
+	var verb, content, found = strings.Cut(description, " ")
+	if !found {
+		return desc, errors.New("no space found in description")
+	}
+
+	desc.Verb = verb
+	desc.Content = content
+	return desc, nil
+}
+
+// Validate the description of a commit message.
+func (validator *HeaderValidator) ValidateDescription(description string) (desc Description, e error) {
+	e = nil
+	desc, e = validator.ProcessDescription(description)
+	if e != nil ||
+		!slices.Contains(validator.verbs, desc.Verb) ||
+		(len(desc.Content) < validator.contentLength[0] || len(desc.Content) > validator.contentLength[1]) {
+		e = InvalidDescriptionError{
+				Received:   description,
+				contentMin: validator.contentLength[0],
+				contentMax: validator.contentLength[1],
+				Verbs:      validator.verbs}
+	}
+	return desc, e
+}
+
 // ValidateString Validates the header of a commit message, returning
-// the different parts of the header, and a non-nil error if validation
-// failed at some point.
+// a non-nil error if validation
+// failed at some point. This sets the Header of the validator.
 func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error) {
 
 	// e = InvalidError{}
-	validator.Header = &Header{}
 	var errs []error
 
 	var matches = validator.header.FindStringSubmatch(possibleHeader)
@@ -168,32 +231,22 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 		return InvalidError{}
 	}
 
-	// TODO: move these to separate validation functions
-	if len(possibleHeader) < validator.headerLength[0] || len(possibleHeader) > validator.headerLength[1] {
-		errs = append(errs, InvalidLengthError{ExpectedMin: validator.headerLength[0], ExpectedMax: validator.headerLength[1], Received: len(possibleHeader)})
+	if err := validator.ValidateHeaderLength(possibleHeader); err != nil {
+		errs = append(errs, err)
 	}
 
 	var scope = matches[validator.header.SubexpIndex("scope")]
-	if !slices.Contains(validator.scopes, scope) {
-		errs = append(errs, InvalidScopeError{Expected: validator.scopes, Received: scope})
+	if err := validator.ValidateScope(scope); err != nil {
+		errs = append(errs, err)
 	} else {
 		validator.Header.Scope = scope
 	}
 
 	var desc = matches[validator.header.SubexpIndex("description")]
-	var verb, content, found = strings.Cut(desc, " ")
-	if !found ||
-		!slices.Contains(validator.verbs, verb) ||
-		(len(content) < validator.contentLength[0] || len(content) > validator.contentLength[1]) {
-		errs = append(errs,
-			InvalidDescriptionError{
-				Received:   desc,
-				contentMin: validator.contentLength[0],
-				contentMax: validator.contentLength[1],
-				Verbs:      validator.verbs})
+	if description, err := validator.ValidateDescription(desc); err != nil {
+		errs = append(errs, err)
 	} else {
-		validator.Header.Description = desc
-		validator.Header.Verb = verb
+		validator.Header.Description = description
 	}
 
 	if len(errs) == 0 {
