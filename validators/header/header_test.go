@@ -96,7 +96,7 @@ func TestValidateScope(t *testing.T) {
 func TestValidateDescription(t *testing.T) {
 	var valid = "Add new feature"
 	var invalidNoVerb = "No verb starting this description"
-	var invalidTooLong = "Add some new features in this wonderfully amazing commit that is too long"
+	var invalidTooLong = "Add some new features in this wonderfully amazing commit whose commit message is just too long"
 	var err error
 	if _, err = validator.ValidateDescription(valid); err != nil {
 		t.Errorf("Valid description '%s' was found to be invalid", valid)

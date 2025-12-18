@@ -121,6 +121,10 @@ func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	return NewHeaderValidator([]string{""}, []string{"Add", "Remove", "Fix"}, [2]int{}, [2]int{})
 }
 
+// NewHeaderValidator returns a new HeaderValidator, and should be called
+// to make one. Scopes and verbs define acceptable values for the scope
+// and verb. The *length arguments set minimum and maximum lengths,
+// defaulting to [0, 80] when zero values. 
 func NewHeaderValidator(scopes, verbs []string, headerLength, contentLength [2]int) (h *HeaderValidator) {
 	h = &HeaderValidator{}
 
@@ -130,11 +134,13 @@ func NewHeaderValidator(scopes, verbs []string, headerLength, contentLength [2]i
 	if headerLength[0] == 0 && headerLength[1] == 0 {
 		// no particular point in setting a minimum to anything positive
 		// here, the other checks will require a certain minimum anyway
-		headerLength[0], headerLength[1] = 0, 50
+		headerLength[0], headerLength[1] = 0, 80
 	}
 	if contentLength[0] == 0 && contentLength[1] == 0 {
-		contentLength[0], contentLength[1] = 3, 50
+		contentLength[0], contentLength[1] = 3, 80
 	}
+
+	// TODO: validate these first for positive
 	h.headerLength, h.contentLength = headerLength, contentLength
 
 	return h
