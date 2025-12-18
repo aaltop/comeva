@@ -11,10 +11,12 @@ import (
 	"strings"
 )
 
-// Header can be used to for checking for valid commit message
+const typeRegex = `(?<type>.+?)`
+// scope is optional, surrounded by parentheses
+const scope = `(?:\((?<scope>.+)\))?`
+// header can be used to for checking for valid commit message
 // headers.
-// var header = regexp.MustCompile(`\A(?:(?<location>frontend|backend): )?(?<message>(?<verb>Add|Remove|Fix) .{3,50})\z`)
-var header = regexp.MustCompile(`\A(?:(?<scope>.*): )?(?<description>.*)\z`)
+var header = regexp.MustCompile(fmt.Sprintf(`\A%s%s(?<breaking>!)?: (?<description>.+)\z`, typeRegex, scope))
 
 // Description represents the description part of a commit message
 type Description struct {
@@ -30,8 +32,13 @@ func (desc Description) String() string {
 
 // Header represents parts of a commit message header.
 type Header struct {
+	// Type denotes the type of the commit
+	Type string
 	// Scope denotes where the changes were made.
 	Scope string
+	// Breaking denotes whether the header marks the commit as a
+	// breaking change
+	Breaking bool
 	// Verb denotes the action of the commit (what happened).
 	Verb string
 	// Description contains the message (<verb> <content>) of the header.
@@ -39,24 +46,62 @@ type Header struct {
 }
 
 func (h Header) String() string {
-	if len(h.Scope) == 0 {
-		return h.Description.String()
+	var breaking = ""
+	if h.Breaking {
+		breaking = "!"
 	}
-	return fmt.Sprintf("%s: %s", h.Scope, h.Description.String())
+	var scope = ""
+	if len(h.Scope) != 0 {
+		scope = fmt.Sprintf("(%s)", h.Scope)
+	}
+	return fmt.Sprintf("%s%s%s: %s", h.Type, scope, breaking, h.Description.String())
 }
 
 type HeaderValidator struct {
 	// Regexp used to pick out parts of the header.
 	header *regexp.Regexp
+	// accepted words for type
+	types []string
 	// Accepted words for scope.
 	scopes []string
-	// Accepted words for verbs.
+	// Accepted words for verb.
 	verbs []string
 	// minimum and maximum.
 	headerLength, contentLength [2]int
 
 	// The content of the header in an easy accessible format.
 	Header Header
+}
+
+func NewDefaultHeaderValidator() (h *HeaderValidator) {
+	// Have default config file instead?
+	return NewHeaderValidator([]string{"feat", "fix"}, []string{""}, []string{"Add", "Remove", "Fix"}, [2]int{}, [2]int{})
+}
+
+// NewHeaderValidator returns a new HeaderValidator, and should be called
+// to make one. Scopes and verbs define acceptable values for the scope
+// and verb. The *length arguments set minimum and maximum lengths,
+// defaulting to [0, 80] when zero values. 
+func NewHeaderValidator(types, scopes, verbs []string, headerLength, contentLength [2]int) (h *HeaderValidator) {
+	h = &HeaderValidator{}
+
+	h.header = header
+	h.types = types
+	h.scopes = scopes
+	h.verbs = verbs
+	if headerLength[0] == 0 && headerLength[1] == 0 {
+		// no particular point in setting a minimum to anything positive
+		// here, the other checks will require a certain minimum anyway
+		headerLength[0], headerLength[1] = 0, 80
+	}
+	if contentLength[0] == 0 && contentLength[1] == 0 {
+		contentLength[0], contentLength[1] = 3, 80
+	}
+
+	// TODO: validate these first for positive
+	h.headerLength, h.contentLength = headerLength, contentLength
+
+	return h
 }
 
 // Help returns a string that describes what the header is expected
@@ -116,36 +161,6 @@ func (e InvalidDescriptionError) Error() string {
 		fmt.Sprintf("and <content> of length [%d, %d]", e.contentMin, e.contentMax)
 }
 
-func NewDefaultHeaderValidator() (h *HeaderValidator) {
-	// Have default config file instead
-	return NewHeaderValidator([]string{""}, []string{"Add", "Remove", "Fix"}, [2]int{}, [2]int{})
-}
-
-// NewHeaderValidator returns a new HeaderValidator, and should be called
-// to make one. Scopes and verbs define acceptable values for the scope
-// and verb. The *length arguments set minimum and maximum lengths,
-// defaulting to [0, 80] when zero values. 
-func NewHeaderValidator(scopes, verbs []string, headerLength, contentLength [2]int) (h *HeaderValidator) {
-	h = &HeaderValidator{}
-
-	h.header = header
-	h.scopes = scopes
-	h.verbs = verbs
-	if headerLength[0] == 0 && headerLength[1] == 0 {
-		// no particular point in setting a minimum to anything positive
-		// here, the other checks will require a certain minimum anyway
-		headerLength[0], headerLength[1] = 0, 80
-	}
-	if contentLength[0] == 0 && contentLength[1] == 0 {
-		contentLength[0], contentLength[1] = 3, 80
-	}
-
-	// TODO: validate these first for positive
-	h.headerLength, h.contentLength = headerLength, contentLength
-
-	return h
-}
-
 // Validate validates the header of a commit message, returning
 // a non-nil error if validation
 // failed at some point. This sets the Header of the validator.
@@ -190,6 +205,24 @@ func (validator *HeaderValidator) ValidateScope(scope string) (e error) {
 	e = nil
 	if !slices.Contains(validator.scopes, scope) {
 		e = InvalidScopeError{Expected: validator.scopes, Received: scope}
+	}
+	return e
+}
+
+type InvalidTypeError struct {
+	Expected []string
+	Received string
+}
+
+func (e InvalidTypeError) Error() string {
+	return fmt.Sprintf("Invalid type '%s', should be one of %v", e.Received, e.Expected)
+}
+
+// Validate the type (of Conventional commits syntax).
+func (validator *HeaderValidator) ValidateType(typ string) (e error) {
+	e = nil
+	if !slices.Contains(validator.types, typ) {
+		e = InvalidTypeError{Expected: validator.types, Received: typ}
 	}
 	return e
 }
@@ -241,8 +274,21 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 		errs = append(errs, err)
 	}
 
+	var typ = matches[validator.header.SubexpIndex("type")]
+	if err := validator.ValidateType(typ); err != nil {
+		errs = append(errs, err)
+	} else {
+		validator.Header.Type = typ
+	}
+
+	var breaking = matches[validator.header.SubexpIndex("breaking")]
+	validator.Header.Breaking = breaking == "!"
+
 	var scope = matches[validator.header.SubexpIndex("scope")]
-	if err := validator.ValidateScope(scope); err != nil {
+	// scope is assumed to be at least one character, so empty scopes
+	// mean that the content was matched correctly but that the scope group
+	// did not exist, which is fine
+	if err := validator.ValidateScope(scope); scope != "" && err != nil {
 		errs = append(errs, err)
 	} else {
 		validator.Header.Scope = scope
