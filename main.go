@@ -38,12 +38,16 @@ func processCommitMessage(scanner *bufio.Scanner) (yamlLines []string) {
 
 		switch i {
 		case 0:
-			var headerValidator = headerValidation.NewHeaderValidator(
+			var err error
+			headerValidator, err := headerValidation.NewHeaderValidator(
 				[]string{"feat", "fix"},
 				[]string{"main", "validators"},
 				[]string{"Add", "Change", "Remove", "Fix"},
-				[2]int{}, [2]int{})
-			var err = headerValidator.ValidateString(line)
+				[2]int{})
+			if err != nil {
+				panic("HeaderValidator should be valid")
+			}
+			err = headerValidator.ValidateString(line)
 			fmt.Printf("Header: %v\nerror: %v\n", headerValidator.Header, err)
 			// // TODO: do this with a regex
 			// var location, heading, hasLocation = strings.Cut(line, ":")

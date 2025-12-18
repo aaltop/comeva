@@ -9,7 +9,11 @@ import (
 )
 
 func FixtureValidator() *HeaderValidator {
-	return NewHeaderValidator([]string{"feat"}, []string{"frontend"}, []string{"Add"}, [2]int{}, [2]int{})
+	var h, e = NewHeaderValidator([]string{"feat"}, []string{"frontend"}, []string{"Add"}, [2]int{0, 80})
+	if e != nil {
+		panic(true)
+	}
+	return h
 }
 
 // FixtureValidTypeScopeVerb returns a valid set of the mentioned values.
@@ -138,18 +142,26 @@ func TestInvalidHeader(t *testing.T) {
 func TestValidateHeaderLength(t *testing.T) {
 	var validator = FixtureValidator()
 	var max = validator.headerLength[1]
+	var min = validator.headerLength[0]
 	var header = make([]byte, max + 1)
 	for i := range header {
 		header[i] = 'a'
 	}
-	var headerString = string(header[:max])
-	if validator.ValidateHeaderLength(headerString) != nil {
-		t.Errorf("Valid length %d was found to be invalid with a max of %d", len(headerString), max)
+
+	var valid, invalid = string(header[:max]), string(header)
+	if validator.ValidateHeaderLength(valid) != nil {
+		t.Errorf("Valid length %d was found to be invalid with a [min, max] of [%d, %d]", len(valid), min, max)
 	}
 
-	headerString = string(header)
-	if validator.ValidateHeaderLength(headerString) == nil {
-		t.Errorf("Invalid length %d was found to be valid with a max of %d", len(headerString), max)
+	if validator.ValidateHeaderLength(invalid) == nil {
+		t.Errorf("Invalid length %d was found to be valid with a [min, max] of [%d, %d]", len(invalid), min, max)
+	}
+
+	var emptyValidator = NewDefaultHeaderValidator()
+	for _, v := range []string{valid, invalid} {
+		if emptyValidator.ValidateHeaderLength(v) != nil {
+			t.Errorf("length %d was found to be invalid where all scopes should be valid", len(v))
+		}
 	}
 
 }
@@ -168,6 +180,13 @@ func TestValidateScope(t *testing.T) {
 		t.Errorf("Invalid scope %s was found to be valid for scopes %v", invalid, validator.scopes)
 	}
 
+	var emptyValidator = NewDefaultHeaderValidator()
+	for _, v := range []string{valid, invalid} {
+		if emptyValidator.ValidateType(v) != nil {
+			t.Errorf("Scope '%s' was found to be invalid where all scopes should be valid", v)
+		}
+	}
+
 }
 
 // ValidateType validates correctly.
@@ -183,6 +202,13 @@ func TestValidateType(t *testing.T) {
 	if validator.ValidateType(invalid) == nil {
 		t.Errorf("Invalid type %s was found to be valid for types %v", valid, validator.types)
 	}
+
+	var emptyValidator = NewDefaultHeaderValidator()
+	for _, v := range []string{valid, invalid} {
+		if emptyValidator.ValidateType(v) != nil {
+			t.Errorf("Type '%s' was found to be invalid where all types should be valid", v)
+		}
+	}
 }
 
 // ValidateDescription validates correctly.
@@ -190,7 +216,6 @@ func TestValidateDescription(t *testing.T) {
 	var validator = FixtureValidator()
 	var valid = "Add new feature"
 	var invalidNoVerb = "No verb starting this description"
-	var invalidTooLong = "Add some new features in this wonderfully amazing commit whose commit message is just too long"
 	var err error
 	if _, err = validator.ValidateDescription(valid); err != nil {
 		t.Errorf("Valid description '%s' was found to be invalid", valid)
@@ -199,7 +224,26 @@ func TestValidateDescription(t *testing.T) {
 	if _, err = validator.ValidateDescription(invalidNoVerb); err == nil {
 		t.Errorf(invalidFormat, invalidNoVerb)
 	}
-	if _, err = validator.ValidateDescription(invalidTooLong); err == nil {
-		t.Errorf(invalidFormat, invalidTooLong)
+}
+
+// ValidateVerb validates correctly
+func TestValidateVerb(t *testing.T) {
+	var validator = FixtureValidator()
+	var valids = FixtureValidTypeScopeVerb()
+	var valid, invalid = valids[2], "Triangulate"
+
+	if validator.ValidateVerb(valid) != nil {
+		t.Errorf("Valid verb '%s' was found to be invalid", valid)
+	}
+
+	if validator.ValidateVerb(invalid) == nil {
+		t.Errorf("Invalid verb '%s' was not found to be invalid", invalid)
+	}
+
+	var emptyValidator = NewDefaultHeaderValidator()
+	for _, v := range []string{valid, invalid} {
+		if emptyValidator.ValidateVerb(v) != nil {
+			t.Errorf("Verb '%s' was found to be invalid where all verbs should be valid", v)
+		}
 	}
 }
