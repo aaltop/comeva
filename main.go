@@ -43,12 +43,13 @@ func processCommitMessage(scanner *bufio.Scanner) (yamlLines []string) {
 				[]string{"feat", "fix"},
 				[]string{"main", "validators"},
 				[]string{"Add", "Change", "Remove", "Fix"},
-				[2]int{})
+				[2]uint{})
 			if err != nil {
 				panic("HeaderValidator should be valid")
 			}
 			err = headerValidator.ValidateString(line)
 			fmt.Printf("Header: %v\nerror: %v\n", headerValidator.Header, err)
+			fmt.Printf("Header values: %#v\n", headerValidator.Header)
 			// // TODO: do this with a regex
 			// var location, heading, hasLocation = strings.Cut(line, ":")
 			// location = strings.ReplaceAll(location, " ", "")

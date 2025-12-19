@@ -9,7 +9,7 @@ import (
 )
 
 func FixtureValidator() *HeaderValidator {
-	var h, e = NewHeaderValidator([]string{"feat"}, []string{"frontend"}, []string{"Add"}, [2]int{0, 80})
+	var h, e = NewHeaderValidator([]string{"feat"}, []string{"frontend"}, []string{"Add"}, [2]uint{0, 80})
 	if e != nil {
 		panic(true)
 	}
@@ -141,8 +141,8 @@ func TestInvalidHeader(t *testing.T) {
 // ValidateHeaderLength validates correctly.
 func TestValidateHeaderLength(t *testing.T) {
 	var validator = FixtureValidator()
-	var max = validator.headerLength[1]
-	var min = validator.headerLength[0]
+	var max = validator.headerLength.Upper
+	var min = validator.headerLength.Lower
 	var header = make([]byte, max + 1)
 	for i := range header {
 		header[i] = 'a'
