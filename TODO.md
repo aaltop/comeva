@@ -8,6 +8,20 @@ optional set. Empty sets should mean that
 1. no expected keys (for expected set)
 2. any key is allowed (for optional set)
 
+# Evaluate sensibility of having the io.Reader Validate method.
+
+It's not very
+elegant, because it just processes the content in whole, assuming that
+the only content is the expected content. Therefore, anyone using this
+would have to have a reader that only has the specific content that is
+valid (or assumed to be), which is hardly useful. Generally,
+the scanner is much more useful anyway, as it processes in a more
+predictable way, and could potentially be passed between the three validators, header,
+body, and trailer. With the reader, content needs to be processed byte-by-byte,
+which just doesn't match how how the commit message would be processed, line-by-line
+like the scanner does it. On this point, however, it's also important to make
+sure that a _line_ scanner is passed, not some other scanner.
+
 # Combine the validators in a message validator
 
 ## Require BREAKING-CHANGE trailer and "!" always together
@@ -21,7 +35,7 @@ be in trailer.
 Why not in the header or body? It might not be
 the main thing changing: I mean, I don't know much about professional
 development, but you make some change, which on the side happens
-to require a change. The main thing in the header should be about
+to require a breaking change. The main thing in the header should be about
 what changed, and if that isn't the breaking change, then what?
 Granted, you could just separately make the
 breaking change and commit that alone, but this can be a little fiddly
@@ -35,6 +49,14 @@ to have the "BREAKING CHANGE" option, as this is not parseable as
 a git trailer, so the trailer version, BREAKING-CHANGE, is expected.
 
 # Add config file reading
+
+# Include optional info on type/scope/verb/trailer key
+
+For "feat" type, something like "A feature was added, or changed in such a
+way that it affects the end user", and "fix" as "A bugfix was made", etc.
+This way, it's possible to print out all the options, and have some info
+about each to give an idea of which would be suitable to use for the current
+commit.
 
 # ? Add a way to produce/compute stuff based on the commit contents
 

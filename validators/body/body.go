@@ -5,6 +5,7 @@ package body
 import (
 	"bufio"
 	"comeva/utils"
+	"comeva/validators"
 	"errors"
 	"fmt"
 	"io"
@@ -29,23 +30,13 @@ func NewBodyValidator(lineLength [2]uint) (validator *BodyValidator, e error) {
 	return &BodyValidator{lineLength: bounds}, e
 }
 
-type InvalidLineLengthError struct {
-	Expected utils.Bounds[uint]
-	Received uint
-	Line     uint
-}
-
-func (e InvalidLineLengthError) Error() string {
-	return fmt.Sprintf("Line %d: Expected line length to be in %v, was %d", e.Line, e.Expected, e.Received)
-}
-
 // ValidateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
 func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error) {
 	e = nil
 	var lenLine uint = uint(len(line))
 	if !validator.lineLength.Contains(lenLine) {
-		e = InvalidLineLengthError{Line: lineNum, Expected: validator.lineLength, Received: lenLine}
+		e = validators.InvalidLineLengthError{Line: lineNum, Expected: validator.lineLength, Received: lenLine}
 	}
 	return
 }

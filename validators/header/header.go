@@ -11,11 +11,14 @@ import (
 	"strings"
 
 	"comeva/utils"
+	"comeva/validators"
 )
 
 const typeRegex = `(?<type>.+?)`
+
 // scope is optional, surrounded by parentheses
 const scope = `(?:\((?<scope>.+)\))?`
+
 // header can be used to for checking for valid commit message
 // headers.
 var header = regexp.MustCompile(fmt.Sprintf(`\A%s%s(?<breaking>!)?: (?<description>.+)\z`, typeRegex, scope))
@@ -50,7 +53,6 @@ type Header struct {
 	Description Description
 }
 
-
 func (h Header) String() string {
 	var breaking = ""
 	if h.Breaking {
@@ -79,7 +81,6 @@ type HeaderValidator struct {
 	// The content of the header in an easy accessible format.
 	Header Header
 }
-
 
 // SetHeaderLength ensures that the header length's min and max are
 // valid and sets them in the validator, returning a non-nil error
@@ -119,7 +120,6 @@ func NewHeaderValidator(types, scopes, verbs []string, headerLength [2]uint) (h 
 // to look like.
 func (validator *HeaderValidator) Help() string {
 
-	
 	var verb = strings.Join(validator.verbs, "|")
 	var notConstrained = "any (not constrained)"
 	if len(validator.verbs) == 0 {
@@ -181,16 +181,6 @@ func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateString(stringBuilder.String())
 }
 
-type InvalidLengthError struct {
-	ExpectedMin int
-	ExpectedMax int
-	Received    int
-}
-
-func (e InvalidLengthError) Error() string {
-	return fmt.Sprintf("Invalid header length %d, should be [%d, %d]", e.Received, e.ExpectedMin, e.ExpectedMax)
-}
-
 // Validate the length of the header.
 func (validator *HeaderValidator) ValidateHeaderLength(possibleHeader string) (e error) {
 	e = nil
@@ -202,7 +192,7 @@ func (validator *HeaderValidator) ValidateHeaderLength(possibleHeader string) (e
 
 	// not exactly sure why len() returns an int in the first place?
 	if !validator.headerLength.Contains(uint(len(possibleHeader))) {
-		e = InvalidLengthError{ExpectedMin: lower, ExpectedMax: upper, Received: len(possibleHeader)}
+		e = validators.InvalidLineLengthError{Expected: validator.headerLength, Received: uint(len(possibleHeader)), Line: 1}
 	}
 	return e
 }
@@ -241,7 +231,6 @@ func (validator *HeaderValidator) ValidateType(typ string) (e error) {
 	return InvalidTypeError{Expected: validator.types, Received: typ}
 }
 
-
 // Attempt extraction of constituent parts from the description of
 // a commit message. No validation is performed.
 func (validator *HeaderValidator) processDescription(description string) (desc Description, e error) {
@@ -256,9 +245,9 @@ func (validator *HeaderValidator) processDescription(description string) (desc D
 }
 
 type InvalidDescriptionError struct {
-	Verbs      []string
+	Verbs []string
 	// Received is the received description
-	Received   string
+	Received string
 }
 
 func (e InvalidDescriptionError) Error() string {
@@ -271,10 +260,10 @@ func (validator *HeaderValidator) ValidateDescription(description string) (desc 
 	e = nil
 	desc, e = validator.processDescription(description)
 	if e != nil ||
-		validator.ValidateVerb(desc.Verb) != nil  {
+		validator.ValidateVerb(desc.Verb) != nil {
 		e = InvalidDescriptionError{
-				Received:   description,
-				Verbs:      validator.verbs}
+			Received: description,
+			Verbs:    validator.verbs}
 	}
 	return desc, e
 }
@@ -301,7 +290,6 @@ func (validator *HeaderValidator) ValidateVerb(verb string) (e error) {
 // failed at some point. This sets the Header of the validator.
 func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error) {
 
-	// e = InvalidError{}
 	var errs []error
 
 	var matches = validator.header.FindStringSubmatch(possibleHeader)
