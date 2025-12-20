@@ -87,48 +87,53 @@ func processCommitMessageFile(fileName string) (yamlLines []string) {
 	return
 }
 
-var flagSet = flag.NewFlagSet("", flag.ContinueOnError)
+var flagSet = flag.NewFlagSet("", flag.ExitOnError)
 
 var helpFlag = flagSet.Bool("help", false, "print help")
-var configFile = flagSet.String("configFile", "", "file path for configuration file")
-var commitFile = flagSet.String("commitFile", "", "file path for commit file")
-
+var configFile = flagSet.String("config-file", "", "file path for configuration file")
+var commitFile = flagSet.String("commit-file", "", "file path for commit file")
 
 func main() {
-	flagSet.Parse(os.Args[1:])
 	var argsOutput = flagSet.Output()
+
+	var usageMessage = func() {
+
+		fmt.Fprintln(argsOutput, "Usage:")
+		fmt.Fprintln(argsOutput, "  comeva [flags] --commit-file <commit_file>")
+		fmt.Fprintln(argsOutput, "  	Validate the commit message in the file <commit_file>.")
+		fmt.Fprintln(argsOutput, "  comeva [flags] <commit_message>")
+		fmt.Fprintln(argsOutput, "  	Validate the commit message <commit_message>, passed as a string.")
+		fmt.Fprintln(argsOutput, "  comeva --help")
+		fmt.Fprintln(argsOutput, "  	Print help.")
+	}
+
 	var helpMessage = func() {
-		var output = argsOutput
-		fmt.Fprint(output, "CoMeVa (Commit Message Validator) is a tool for validating git commit messages.\n\n")
-		
-		fmt.Fprintln(output, "Usage:")
-		fmt.Fprintln(output, "  comeva [flags] --commitFile <commit_file>")
-		fmt.Fprintln(output, "  comeva [flags] <commit_message>")
-		fmt.Fprintln(output, "    <commit_message> specifies the commit message as a string.")
-		fmt.Fprintln(output, "  comeva --help")
+		fmt.Fprint(argsOutput, "\nCoMeVa (Commit Message Validator) is a tool for validating git commit messages.\n\n")
 
+		usageMessage()
 
-		fmt.Fprintln(output)
+		fmt.Fprintln(argsOutput)
 
-		fmt.Fprint(output, "Options:\n")
+		fmt.Fprint(argsOutput, "Options:\n")
 		flagSet.PrintDefaults()
 	}
 
-	flagSet.Usage = helpMessage
+	flagSet.Usage = usageMessage
+	flagSet.Parse(os.Args[1:])
 
 	var args []string = flagSet.Args()
 	var commitFileSpecified = len(*commitFile) > 0
 	var numArgs = len(args)
 	switch {
+	case *helpFlag:
+		helpMessage()
+		return
 	case (numArgs < 1 && !commitFileSpecified) || (numArgs == 1 && commitFileSpecified):
 		fmt.Fprint(argsOutput, "Error: specify either a commit message string or a commit message file.\n\n")
 		helpMessage()
 		return
 	case numArgs != 1 && !commitFileSpecified:
 		fmt.Fprintf(argsOutput, "Error: expected one argument, got %d\n\n", len(args))
-		helpMessage()
-		return
-	case *helpFlag:
 		helpMessage()
 		return
 	}
