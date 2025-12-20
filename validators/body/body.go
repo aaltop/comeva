@@ -67,28 +67,11 @@ func (e InvalidLineError) Error() string {
 	return fmt.Sprintf("Line %d: %s", e.Line, e.Reason)
 }
 
-// countingScanner wraps bufio.Scanner to add a counter of times
-// .Scan() has been called.
-type countingScanner struct {
-	Scanner      *bufio.Scanner
-	timesScanned uint
-}
-
-func (scanner *countingScanner) Scan() bool {
-	var hadNext = scanner.Scanner.Scan()
-	scanner.timesScanned++
-	return hadNext
-}
-
-func (scanner *countingScanner) Text() string {
-	return scanner.Scanner.Text()
-}
-
 func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
 	var line string
 	e = nil
 	var errs []error
-	var scner = countingScanner{Scanner: scanner}
+	var scner = utils.CountingScanner{Scanner: scanner}
 
 	// empty body is fine
 	if !scner.Scan() {
@@ -103,7 +86,7 @@ func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error
 	if len(strings.TrimSpace(line)) == 0 {
 		errs = append(errs, InvalidLineError{
 			Reason: "First line should not be empty",
-			Line:   scner.timesScanned})
+			Line:   scner.TimesScanned})
 	}
 
 	// Not putting that many constraints on the body, in my opinion it
@@ -126,7 +109,7 @@ func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error
 	// available by looking at the diffs), and that this is done
 	// in a clear, not terribly verbose way.
 	for scner.Scan() {
-		if e := validator.ValidateLine(scner.Text(), scner.timesScanned); e != nil {
+		if e := validator.ValidateLine(scner.Text(), scner.TimesScanned); e != nil {
 			errs = append(errs, e)
 		}
 	}
