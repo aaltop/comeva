@@ -17,6 +17,10 @@ type BodyValidator struct {
 	// lineLength describes the lower and upper bound of a line's length.
 	lineLength utils.Bounds[uint]
 
+	// Body contains the body.
+	Body string
+}
+
 func NewDefaultBodyValidator() (validator *BodyValidator) {
 	return &BodyValidator{}
 }
@@ -108,11 +112,22 @@ func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error
 	// idea of what changed and why the change was made (with further details
 	// available by looking at the diffs), and that this is done
 	// in a clear, not terribly verbose way.
-	for scner.Scan() {
-		if e := validator.ValidateLine(scner.Text(), scner.TimesScanned); e != nil {
+	var body []string
+	for {
+
+		// processing the first line requires the odd looping here
+		body = append(body, line)
+		if e := validator.ValidateLine(line, scner.TimesScanned); e != nil {
 			errs = append(errs, e)
 		}
+
+		if !scner.Scan() {
+			break
+		} else {
+			line = scner.Text()
+		}
 	}
+	validator.Body = strings.Join(body, "\n")
 
 	if len(errs) > 0 {
 		e = errors.Join(errs...)

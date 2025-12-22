@@ -120,3 +120,17 @@ func TestValidateLine(t *testing.T) {
 		t.Errorf("Line of length 81 was found to be invalid where all lengths should be valid: %v", e)
 	}
 }
+
+// The validated body is correctly set in the validator.
+func TestSetBodySetInValidator(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var body string = ValidBody()[0]
+	if e := validator.ValidateString(body); e != nil {
+		t.Errorf("Unexpected error: %v", e)
+	}
+
+	if body != validator.Body {
+		t.Errorf("Body mismatch:\nExpected:\n%s\nReceived:\n%s\n", body, validator.Body)
+	}
+}
