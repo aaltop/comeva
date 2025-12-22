@@ -25,8 +25,6 @@ type HeaderConstructor struct {
 	ValidFormatting bool
 }
 
-
-
 func (constr HeaderConstructor) WithScope(typ, scope, verb string) []string {
 
 	if constr.ValidFormatting {
@@ -43,7 +41,7 @@ func (constr HeaderConstructor) WithScope(typ, scope, verb string) []string {
 }
 
 func (constr HeaderConstructor) WithoutScope(typ, verb string) []string {
-	
+
 	if constr.ValidFormatting {
 		return []string{
 			fmt.Sprintf("%s!: %s search", typ, verb),
@@ -86,7 +84,7 @@ func TestHeaderValidatorValidate(t *testing.T) {
 		t.Run(header, func(t *testing.T) {
 			var headerValidator validators.ReaderValidator = FixtureValidator()
 			var headerReader = strings.NewReader(header)
-		
+
 			var err error = headerValidator.Validate(headerReader)
 			if err != nil {
 				t.Errorf("Error matching: %v", err)
@@ -143,7 +141,7 @@ func TestValidateHeaderLength(t *testing.T) {
 	var validator = FixtureValidator()
 	var max = validator.headerLength.Upper
 	var min = validator.headerLength.Lower
-	var header = make([]byte, max + 1)
+	var header = make([]byte, max+1)
 	for i := range header {
 		header[i] = 'a'
 	}
@@ -160,7 +158,7 @@ func TestValidateHeaderLength(t *testing.T) {
 	var emptyValidator = NewDefaultHeaderValidator()
 	for _, v := range []string{valid, invalid} {
 		if emptyValidator.ValidateHeaderLength(v) != nil {
-			t.Errorf("length %d was found to be invalid where all scopes should be valid", len(v))
+			t.Errorf("length %d was found to be invalid where all lengths should be valid", len(v))
 		}
 	}
 

@@ -109,7 +109,7 @@ func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, 
 	// be actual text.
 	if len(strings.TrimSpace(line)) == 0 {
 		errs = append(errs, validators.InvalidLineError{
-			Reason: "First line should not be empty",
+			Reason: "First line of body should not be empty",
 			Line:   scner.TimesScanned})
 	}
 
