@@ -309,7 +309,13 @@ func (validator *TrailerValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 				errs = append(errs, keyValueError)
 			}
 
-			break
+			// reset trailer so that next loop will not test for line continuation
+			// if a valid key-value pair is not found
+			//
+			// Consequently, looping will next continue until a valid key-value pair
+			// is found -- at which point the above testing is performed again --
+			// or end-of-content is reached
+			trailer = Trailer{}
 		}
 
 	}

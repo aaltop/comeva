@@ -3,6 +3,7 @@ package trailer
 import (
 	"bufio"
 	"comeva/validators"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -62,6 +63,7 @@ func InvalidKeyValue() []string {
 		"BREAKING CHANGE: key's got a space, no good",
 		ValidKey()[0] + ":no space after the colon, no good",
 		ValidKey()[0] + ": otherwise fine, but the content in the trailers should also be limited in the number of columns on one line",
+		ValidKey()[0] + ":  there should be only one space after colon",
 	}
 }
 
@@ -313,5 +315,26 @@ func TestValueParsedWithoutModification(t *testing.T) {
 	var received = validator.Trailers[0].Value
 	if received != expected {
 		t.Errorf("Parsed value did not match original\nParsed:\n%s\nOriginal:\n%s", received, expected)
+	}
+}
+
+// An attempt is made to parse all trailers, even if there is an issue with one.
+func TestAttemptParseAll(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var trailer = ValidKey()[0] + ": value that\n   too big indent\n" +
+		ValidKey()[1] + ": key-value pair\n  that is okay"
+
+	var e error = validator.ValidateString(trailer)
+	if e == nil {
+		t.Errorf("Invalid trailer\n%s\nwas found to be valid", trailer)
+	}
+
+	if !errors.As(e, &InvalidValueContinuationError{}) {
+		t.Error("Expected a line continuation to be found invalid")
+	}
+
+	if len(validator.Trailers) != 2 {
+		t.Errorf("Expected validator to have processed 2 trailers, found %d", len(validator.Trailers))
 	}
 }

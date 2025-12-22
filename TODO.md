@@ -24,6 +24,12 @@ sure that a _line_ scanner is passed, not some other scanner.
 
 # Combine the validators in a message validator
 
+## Have all the sub-validators accept a CountingScanner for ease of keeping track of line
+
+Passing around the same scanner (ideally) should make it easier to give information
+about the line the error is on. The header validator also needs to be changed
+to support the counter.
+
 ## Require BREAKING-CHANGE trailer and "!" always together
 
 Not quite like this according to the conventional commits
