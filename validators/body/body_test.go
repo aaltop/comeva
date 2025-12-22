@@ -1,6 +1,7 @@
 package body
 
 import (
+	"comeva/utils"
 	"comeva/validators"
 	"fmt"
 	"strings"
@@ -111,5 +112,11 @@ func TestValidateLine(t *testing.T) {
 
 	if e := validator.ValidateLine(constructor.Line(81), 1); e == nil {
 		t.Error("Invalid length line was found to be valid")
+	}
+
+	// Bounds with 0,0 should mean no length check
+	validator.lineLength = utils.Bounds[uint]{}
+	if e := validator.ValidateLine(constructor.Line(81), 1); e != nil {
+		t.Errorf("Line of length 81 was found to be invalid where all lengths should be valid: %v", e)
 	}
 }

@@ -33,7 +33,13 @@ func NewBodyValidator(lineLength [2]uint) (validator *BodyValidator, e error) {
 // ValidateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
 func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error) {
-	e = nil
+
+	// for both at zero, don't check length
+	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
+	if lower == 0 && upper == 0 {
+		return
+	}
+
 	var lenLine uint = uint(len(line))
 	if !validator.lineLength.Contains(lenLine) {
 		e = validators.InvalidLineLengthError{Line: lineNum, Expected: validator.lineLength, Received: lenLine}
