@@ -338,3 +338,18 @@ func TestAttemptParseAll(t *testing.T) {
 		t.Errorf("Expected validator to have processed 2 trailers, found %d", len(validator.Trailers))
 	}
 }
+
+// Using bounds with lower and upper both zero means no line length checks.
+func TestDefaultBounds(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var trailer = ValidKey()[0] + ": A value that is far too long to exist on just this one line I'm fairly sure"
+	if e := validator.ValidateString(trailer); e == nil {
+		t.Error("Invalid, too long line was found to be valid")
+	}
+
+	validator.SetLineLength(0, 0)
+	if e := validator.ValidateString(trailer); e != nil {
+		t.Errorf("Unexpected error: %v", e)
+	}
+}

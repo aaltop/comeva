@@ -191,18 +191,30 @@ var keyValueRegex = regexp.MustCompile(fmt.Sprintf(
 	fmt.Sprintf(`(?<key>%s)`, keyChars),
 	`(?<value>\S[^\r\n$]*)`))
 
+func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (e error) {
+
+	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
+	if lower == 0 && upper == 0 {
+		return nil
+	}
+
+	var lineLength = uint(len(line))
+	if !validator.lineLength.Contains(lineLength) {
+		return validators.InvalidLineLengthError{
+			Expected: validator.lineLength,
+			Received: lineLength,
+			Line:     lineNum}
+	}
+	return
+}
+
 // ValidateKeyValue validates a trailer key-value pair. A key-value pair does
 // not, by the validation definition used here, continue to another line.
 func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, e error) {
 	var errs []error
 
-	if !validator.lineLength.Contains(uint(len(possibleKeyValue))) {
-		errs = append(
-			errs,
-			validators.InvalidLineLengthError{
-				Expected: validator.lineLength,
-				Received: uint(len(possibleKeyValue)),
-				Line:     lineNum})
+	if e := validator.ValidateLineLength(possibleKeyValue, lineNum); e != nil {
+		errs = append(errs, e)
 	}
 
 	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
@@ -240,14 +252,8 @@ func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuatio
 
 	var errs []error
 
-	var lineLength = uint(len(possibleContinuation))
-	if !validator.lineLength.Contains(lineLength) {
-		errs = append(
-			errs,
-			validators.InvalidLineLengthError{
-				Expected: validator.lineLength,
-				Received: lineLength,
-				Line:     lineNum})
+	if e := validator.ValidateLineLength(possibleContinuation, lineNum); e != nil {
+		errs = append(errs, e)
 	}
 
 	if !validator.continuationRegex.MatchString(possibleContinuation) {
