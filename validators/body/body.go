@@ -16,6 +16,9 @@ import (
 type BodyValidator struct {
 	// lineLength describes the lower and upper bound of a line's length.
 	lineLength utils.Bounds[uint]
+
+func NewDefaultBodyValidator() (validator *BodyValidator) {
+	return &BodyValidator{}
 }
 
 // NewBodyValidator returns a new BodyValidator, returning a non-nil error

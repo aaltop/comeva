@@ -79,6 +79,14 @@ func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
 	return e
 }
 
+func NewDefaultTrailerValidator() (validator *TrailerValidator) {
+	validator, e := NewTrailerValidator(make(KeyMap), make(KeyMap), 2, [2]uint{0, 0})
+	if e != nil {
+		panic(e)
+	}
+	return
+}
+
 // NewtrailerValidator returns a new TrailerValidator.
 //
 // For the *Keys arguments, the key should match the Value of the value's Key,
