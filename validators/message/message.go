@@ -32,22 +32,23 @@ func (validator *MessageValidator) Reset() {
 }
 
 func NewDefaultMessageValidator() (validator *MessageValidator) {
-	return NewMessageValidator(
+	validator, _ = NewMessageValidator(
 		*header.NewDefaultHeaderValidator(),
 		*body.NewDefaultBodyValidator(),
 		*trailer.NewDefaultTrailerValidator(),
 	)
+	return validator
 }
 
 func NewMessageValidator(
 	headerValidator header.HeaderValidator,
 	bodyValidator body.BodyValidator,
 	trailerValidator trailer.TrailerValidator,
-) *MessageValidator {
+) (messageValidator *MessageValidator, e error) {
 	return &MessageValidator{
 		HeaderValidator:  headerValidator,
 		BodyValidator:    bodyValidator,
-		TrailerValidator: trailerValidator}
+		TrailerValidator: trailerValidator}, nil
 }
 
 func (validator *MessageValidator) Validate(reader io.Reader) (e error) {
@@ -173,13 +174,13 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 
 	// the scanner being passed here hasn't actually scanned the first line yet
 	// (bodyStart line), so actually pass the value one before that.
-	if e = validator.BodyValidator.ValidateStringWithLine(strings.Join(bodyContent, "\n"), uint(bodyStart-1)); e != nil {
+	if e = validator.BodyValidator.ValidateStringWithLine(strings.Join(bodyContent, "\n"), uint(bodyStart)); e != nil {
 		errs = append(errs, e)
 	}
 
 	// the scanner being passed here hasn't actually scanned the first line yet
 	// (trailerStart line), so actually pass the value one before that.
-	if e = validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart-1)); e != nil {
+	if e = validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart)); e != nil {
 		errs = append(errs, e)
 	}
 
