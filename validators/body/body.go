@@ -7,7 +7,6 @@ import (
 	"comeva/utils"
 	"comeva/validators"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 )
@@ -62,15 +61,6 @@ func (validator *BodyValidator) ValidateString(possibleBody string) (e error) {
 	return validator.ValidateScanner(bufio.NewScanner(strings.NewReader(possibleBody)))
 }
 
-type InvalidLineError struct {
-	Reason string
-	Line   uint
-}
-
-func (e InvalidLineError) Error() string {
-	return fmt.Sprintf("Line %d: %s", e.Line, e.Reason)
-}
-
 func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
 	var line string
 	e = nil
@@ -88,7 +78,7 @@ func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error
 	// and this line is not part of either. After this, there should
 	// be actual text.
 	if len(strings.TrimSpace(line)) == 0 {
-		errs = append(errs, InvalidLineError{
+		errs = append(errs, validators.InvalidLineError{
 			Reason: "First line should not be empty",
 			Line:   scner.TimesScanned})
 	}
