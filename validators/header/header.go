@@ -93,6 +93,11 @@ func (validator *HeaderValidator) SetHeaderLength(min, max uint) (e error) {
 	return e
 }
 
+// Reset resets any content set during validation.
+func (validator *HeaderValidator) Reset() {
+	validator.Header = Header{}
+}
+
 func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	h = &HeaderValidator{}
 	h.header = *header
@@ -203,7 +208,7 @@ type InvalidScopeError struct {
 }
 
 func (e InvalidScopeError) Error() string {
-	return fmt.Sprintf("Invalid scope '%s', should be one of %v", e.Received, e.Expected)
+	return fmt.Sprintf("Header: Invalid scope '%s', should be one of %v", e.Received, e.Expected)
 }
 
 // Validate the scope (of Conventional commits syntax).
@@ -220,7 +225,7 @@ type InvalidTypeError struct {
 }
 
 func (e InvalidTypeError) Error() string {
-	return fmt.Sprintf("Invalid type '%s', should be one of %v", e.Received, e.Expected)
+	return fmt.Sprintf("Header: Invalid type '%s', should be one of %v", e.Received, e.Expected)
 }
 
 // Validate the type (of Conventional commits syntax).
@@ -251,7 +256,7 @@ type InvalidDescriptionError struct {
 }
 
 func (e InvalidDescriptionError) Error() string {
-	return fmt.Sprintf("Invalid description '%s', ", e.Received) +
+	return fmt.Sprintf("Header: Invalid description '%s', ", e.Received) +
 		fmt.Sprintf("should be '<verb> <content>', where <verb> is one of %v ", e.Verbs)
 }
 
@@ -274,7 +279,7 @@ type InvalidVerbError struct {
 }
 
 func (e InvalidVerbError) Error() string {
-	return fmt.Sprintf("Invalid verb '%s', should be one of %v", e.Received, e.Expected)
+	return fmt.Sprintf("Header: Invalid verb '%s', should be one of %v", e.Received, e.Expected)
 }
 
 // Validate the verb of a description of a commit message.
@@ -290,6 +295,7 @@ func (validator *HeaderValidator) ValidateVerb(verb string) (e error) {
 // failed at some point. This sets the Header of the validator.
 func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error) {
 
+	validator.Reset()
 	var errs []error
 
 	var matches = validator.header.FindStringSubmatch(possibleHeader)

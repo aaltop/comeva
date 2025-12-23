@@ -20,6 +20,11 @@ type BodyValidator struct {
 	Body string
 }
 
+// Reset resets any content set during validation.
+func (validator *BodyValidator) Reset() {
+	validator.Body = ""
+}
+
 func NewDefaultBodyValidator() (validator *BodyValidator) {
 	return &BodyValidator{}
 }
@@ -57,15 +62,40 @@ func (validator *BodyValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }
 
+// ValidateString validates a message body block.
 func (validator *BodyValidator) ValidateString(possibleBody string) (e error) {
-	return validator.ValidateScanner(bufio.NewScanner(strings.NewReader(possibleBody)))
+	return validator.ValidateStringWithLine(possibleBody, 1)
 }
 
+// ValidateStringOnLine validates a message body block.
+//
+// `startLine` > 0 specifies the line
+// on which the string starts in the original message, assuming that the trailer
+// is a part of a longer message. This is currently only relevant for accurate
+// reporting of the line number on which a validation error occurs.
+func (validator *BodyValidator) ValidateStringWithLine(possibleBody string, startLine uint) (e error) {
+	return validator.ValidateScannerWithLine(bufio.NewScanner(strings.NewReader(possibleBody)), startLine-1)
+}
+
+// ValidateScanner validates the content returned by the scanner. `scanner` is expected
+// to be a line-by-line scanner.
 func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
+	return validator.ValidateScannerWithLine(scanner, 0)
+}
+
+// ValidateScanner validates the content returned by the scanner. `scanner` is expected
+// to be a line-by-line scanner. `timesScanned` specifies
+// the number of times .Scan() has been called on `scanner`, representing the
+// line at which the the scanner is.
+func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (e error) {
+
+	validator.Reset()
+
 	var line string
 	e = nil
 	var errs []error
 	var scner = utils.CountingScanner{Scanner: scanner}
+	scner.TimesScanned = timesScanned
 
 	// empty body is fine
 	if !scner.Scan() {

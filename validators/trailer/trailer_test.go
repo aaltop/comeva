@@ -294,8 +294,12 @@ func TestValidationAddsToTrailers(t *testing.T) {
 	}
 
 	testLength(validator.Trailers, 0)
+	var trailers []string
 	for i, trailer := range ValidTrailer() {
-		validator.ValidateString(trailer)
+		// the validator should reset the contents whenever a "main" Validate*
+		// method is called, so need to pass an increasing trailer block
+		trailers = append(trailers, trailer)
+		validator.ValidateString(strings.Join(trailers, "\n"))
 		testLength(validator.Trailers, i+1)
 	}
 }

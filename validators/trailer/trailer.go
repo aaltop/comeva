@@ -79,6 +79,11 @@ func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
 	return e
 }
 
+// Reset resets any content set during validation.
+func (validator *TrailerValidator) Reset() {
+	validator.Trailers = []Trailer{}
+}
+
 func NewDefaultTrailerValidator() (validator *TrailerValidator) {
 	validator, e := NewTrailerValidator(make(KeyMap), make(KeyMap), 2, [2]uint{0, 0})
 	if e != nil {
@@ -126,7 +131,17 @@ func (validator *TrailerValidator) Validate(reader io.Reader) (e error) {
 
 // ValidateString validates a trailer block.
 func (validator *TrailerValidator) ValidateString(possibleTrailer string) (e error) {
-	return validator.ValidateScanner(bufio.NewScanner(strings.NewReader(possibleTrailer)))
+	return validator.ValidateStringWithLine(possibleTrailer, 1)
+}
+
+// ValidateString validates a trailer block.
+//
+// `startLine` > 0 specifies the line
+// on which the string starts in the original message, assuming that the trailer
+// is a part of a longer message. This is currently only relevant for accurate
+// reporting of the line number on which a validation error occurs.
+func (validator *TrailerValidator) ValidateStringWithLine(possibleTrailer string, startLine uint) (e error) {
+	return validator.ValidateScannerWithLine(bufio.NewScanner(strings.NewReader(possibleTrailer)), startLine-1)
 }
 
 type InvalidTrailerError struct {
@@ -193,12 +208,6 @@ func (e InvalidKeyValueError) Error() string {
 	return fmt.Sprintf("Line %d: No key-value pair found", e.Line)
 }
 
-// keyValueRegex matches the first (and possibly only) line of a git trailer.
-var keyValueRegex = regexp.MustCompile(fmt.Sprintf(
-	`\A%s: %s`,
-	fmt.Sprintf(`(?<key>%s)`, keyChars),
-	`(?<value>\S[^\r\n$]*)`))
-
 func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (e error) {
 
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
@@ -214,6 +223,19 @@ func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint)
 			Line:     lineNum}
 	}
 	return
+}
+
+// keyValueRegex matches the first (and possibly only) line of a git trailer.
+var keyValueRegex = regexp.MustCompile(fmt.Sprintf(
+	`\A%s: %s`,
+	fmt.Sprintf(`(?<key>%s)`, keyChars),
+	`(?<value>\S[^\r\n$]*)`))
+
+// ResemblesKeyValue reports whether the string (assumed to be a line of text)
+// resembles a git trailer's key-value pair. See [ValidateKeyValue] for proper
+// validation.
+func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bool {
+	return keyValueRegex.MatchString(possibleKeyValue)
 }
 
 // ValidateKeyValue validates a trailer key-value pair. A key-value pair does
@@ -287,9 +309,25 @@ func (e MissingRequiredKeyError) Error() string {
 	return fmt.Sprintf("Required keys %v not found in trailer", e.Missing)
 }
 
+// ValidateScanner validates the content returned by the scanner. `scanner` is expected
+// to be a line-by-line scanner. `timesScanned` specifies
+// the number of times .Scan() has been called on `scanner`, representing the
+// line at which the the scanner is.
 func (validator *TrailerValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
+	return validator.ValidateScannerWithLine(scanner, 0)
+}
+
+// ValidateScanner validates the content returned by the scanner. `scanner` is expected
+// to be a line-by-line scanner. `timesScanned` specifies
+// the number of times .Scan() has been called on `scanner`, representing the
+// line at which the the scanner is.
+func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (e error) {
+
+	// empty the Trailers in case this function has been called previously
+	validator.Reset()
 
 	var scner = utils.CountingScanner{Scanner: scanner}
+	scner.TimesScanned = timesScanned
 	var errs []error
 
 	var trailer Trailer = Trailer{}
