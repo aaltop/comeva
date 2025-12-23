@@ -8,7 +8,6 @@ import (
 	trailerValidation "comeva/validators/trailer"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
@@ -94,21 +93,15 @@ func getMessageValidator() (messageValidator *messageValidation.MessageValidator
 	return messageValidator
 }
 
-func validateCommitFile(commitFile string) (e error) {
-	var file *os.File
-	file, e = os.Open(commitFile)
-	if e != nil {
-		fmt.Printf("Error opening file '%s': %v\n", commitFile, e)
-		return e
-	}
-	defer file.Close()
-
-	return validateCommitMessage(file)
+func readFileString(fileName string) (content string, e error) {
+	var contentBytes []byte
+	contentBytes, e = os.ReadFile(fileName)
+	return string(contentBytes), e
 }
 
-func validateCommitMessage(reader io.Reader) (e error) {
+func validateCommitMessage(message string) (e error) {
 	var validator *messageValidation.MessageValidator = getMessageValidator()
-	e = validator.Validate(reader)
+	e = validator.ValidateString(message)
 	return e
 }
 
@@ -124,6 +117,11 @@ func printCommitMessage(message string) {
 	fmt.Println(delimiterLine)
 	printStringLines(message)
 	fmt.Println(delimiterLine)
+}
+
+func printAndValidateMessage(message string) (e error) {
+	printCommitMessage(message)
+	return validateCommitMessage(message)
 }
 
 func main() {
@@ -152,10 +150,10 @@ func main() {
 	}
 
 	var e error
+	var commitMessage string
 	if numArgs == 1 {
-		var commitMessage string = args[0]
-		printCommitMessage(commitMessage)
-		e = validateCommitMessage(strings.NewReader(commitMessage))
+		commitMessage = args[0]
+		e = printAndValidateMessage(commitMessage)
 		if e != nil {
 			fmt.Printf("Found issues validating message:\n%v\n", e)
 		} else {
@@ -163,11 +161,17 @@ func main() {
 		}
 
 	} else {
-		e = validateCommitFile(*commitFile)
+
+		commitMessage, e = readFileString(*commitFile)
 		if e != nil {
-			fmt.Printf("Found issues validating file '%s':\n%v\n", *commitFile, e)
+			fmt.Println(e)
 		} else {
-			fmt.Printf("No issues found with file '%s'\n", *commitFile)
+			e = printAndValidateMessage(commitMessage)
+			if e != nil {
+				fmt.Printf("Found issues validating file '%s':\n%v\n", *commitFile, e)
+			} else {
+				fmt.Printf("No issues found with file '%s'\n", *commitFile)
+			}
 		}
 	}
 
