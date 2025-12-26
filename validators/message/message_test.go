@@ -2,6 +2,7 @@ package message
 
 import (
 	"comeva/validators"
+	"comeva/validators/trailer"
 	"errors"
 	"fmt"
 	"strings"
@@ -142,5 +143,42 @@ func TestBreakingChangesTogether(t *testing.T) {
 	}
 	if !errors.As(e, &BreakingChangeError{}) {
 		t.Errorf("Expected a BreakingChangeError")
+	}
+}
+
+// It is checked that any required keys are present (mostly for the situation
+// where a trailer is not present at all, but required keys are specified).
+func TestTrailerChecksKeys(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var requiredKeys trailer.KeyMap = make(trailer.KeyMap)
+	requiredKeys.Set("Effect", "")
+	validator.TrailerValidator, _ = trailer.NewTrailerValidator(
+		requiredKeys, make(trailer.KeyMap), 2, [2]uint{0, 80},
+	)
+
+	var header, trailer string = "feat: Add some thing", "Effect: behavioural"
+	var messageNoTrailer = fmt.Sprintf("%s\n", header)
+	var messageNoTrailer2 = fmt.Sprintf("%s\n\n%s", header, "This is a body text\nwith some text")
+	var messageInvalidTrailer = fmt.Sprintf("%s\n\n%s", header, "Some-Key: some info")
+	var message = fmt.Sprintf("%s\n\n%s", header, trailer)
+
+	var e error
+	if e = validator.ValidateString(message); e != nil {
+		t.Errorf("Valid message\n%s\nfound to be invalid: %v", message, e)
+	}
+
+	var invalidString = "Invalid message (missing required trailer key 'Effect')\n%s\nfound to be valid"
+
+	if e = validator.ValidateString(messageInvalidTrailer); e == nil {
+		t.Errorf(invalidString, messageInvalidTrailer)
+	}
+
+	if e = validator.ValidateString(messageNoTrailer); e == nil {
+		t.Errorf(invalidString, messageNoTrailer)
+	}
+
+	if e = validator.ValidateString(messageNoTrailer2); e == nil {
+		t.Errorf(invalidString, messageNoTrailer2)
 	}
 }

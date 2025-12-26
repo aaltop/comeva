@@ -136,28 +136,28 @@ func TestInvalidHeader(t *testing.T) {
 	}
 }
 
-// ValidateHeaderLength validates correctly.
-func TestValidateHeaderLength(t *testing.T) {
+// ValidateLength validates correctly.
+func TestValidateLength(t *testing.T) {
 	var validator = FixtureValidator()
-	var max = validator.headerLength.Upper
-	var min = validator.headerLength.Lower
+	var max = validator.lineLength.Upper
+	var min = validator.lineLength.Lower
 	var header = make([]byte, max+1)
 	for i := range header {
 		header[i] = 'a'
 	}
 
 	var valid, invalid = string(header[:max]), string(header)
-	if validator.ValidateHeaderLength(valid) != nil {
+	if validator.ValidateLength(valid) != nil {
 		t.Errorf("Valid length %d was found to be invalid with a [min, max] of [%d, %d]", len(valid), min, max)
 	}
 
-	if validator.ValidateHeaderLength(invalid) == nil {
+	if validator.ValidateLength(invalid) == nil {
 		t.Errorf("Invalid length %d was found to be valid with a [min, max] of [%d, %d]", len(invalid), min, max)
 	}
 
 	var emptyValidator = NewDefaultHeaderValidator()
 	for _, v := range []string{valid, invalid} {
-		if emptyValidator.ValidateHeaderLength(v) != nil {
+		if emptyValidator.ValidateLength(v) != nil {
 			t.Errorf("length %d was found to be invalid where all lengths should be valid", len(v))
 		}
 	}

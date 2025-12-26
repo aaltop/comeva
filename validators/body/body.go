@@ -67,7 +67,7 @@ func (validator *BodyValidator) ValidateString(possibleBody string) (e error) {
 	return validator.ValidateStringWithLine(possibleBody, 1)
 }
 
-// ValidateStringOnLine validates a message body block.
+// ValidateStringWithLine validates a message body block.
 //
 // `startLine` > 0 specifies the line
 // on which the string starts in the original message, assuming that the trailer

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 // Key represents a trailer key.
 type Key struct {
-	// Value represents the value of the Key.
+	// Value represents the value of the key.
 	Value string
 	// Info optionally describes the key.
 	Info string
@@ -55,7 +56,7 @@ func (keyMap *KeyMap) Get(key string) (value Key, ok bool) {
 // TrailerValidator validates a git commit message's trailer block.
 type TrailerValidator struct {
 	// continuationRegex matches any continuation lines.
-	continuationRegex regexp.Regexp
+	continuationRegex *regexp.Regexp
 	// requiredKeys contains the keys that are required to be found in any commit.
 	// If this is empty, there are no required keys.
 	requiredKeys KeyMap
@@ -68,6 +69,19 @@ type TrailerValidator struct {
 	lineLength         utils.Bounds[uint]
 
 	Trailers []Trailer
+}
+
+// Equal reports whether the two TrailerValidators are equal.
+func (validator *TrailerValidator) Equal(other *TrailerValidator) bool {
+	if validator == nil || other == nil {
+		return validator == other
+	}
+
+	return validator.continuationRegex.String() == other.continuationRegex.String() &&
+		maps.Equal(validator.requiredKeys, other.requiredKeys) &&
+		maps.Equal(validator.optionalKeys, other.optionalKeys) &&
+		validator.continuationIndent == other.continuationIndent &&
+		validator.lineLength == other.lineLength
 }
 
 // SetLineLength sets new bounds for line length.
@@ -100,22 +114,16 @@ func NewTrailerValidator(requiredKeys, optionalKeys KeyMap, continuationIndent u
 	validator = &TrailerValidator{}
 	var errs []error
 
-	// indent followed by at least one non-space character, followed by any sequence
-	// of characters not including carriage returns or newlines, ending in a possible newline and
-	// a required end-of-text.
-	validator.continuationRegex = *regexp.MustCompile(fmt.Sprintf(`\A[ ]{%d}\S[^\r\n]*\n?$`, continuationIndent))
-
 	validator.requiredKeys = requiredKeys
 	validator.optionalKeys = optionalKeys
-	validator.continuationIndent = continuationIndent
-	e = validator.SetLineLength(lineLength[0], lineLength[1])
 
-	if e != nil {
+	if e = validator.SetLineLength(lineLength[0], lineLength[1]); e != nil {
 		errs = append(errs, e)
 	}
 
-	if continuationIndent < 1 {
-		errs = append(errs, errors.New("continuationIndent should be > 0"))
+	// this also sets the continuationRegex
+	if e = validator.SetContinuationIndent(continuationIndent); e != nil {
+		errs = append(errs, e)
 	}
 
 	if len(errs) > 0 {
@@ -123,6 +131,37 @@ func NewTrailerValidator(requiredKeys, optionalKeys KeyMap, continuationIndent u
 	}
 
 	return validator, e
+}
+
+// newContinuationRegex creates a new continuationRegex for TrailerValidator
+// based on the new value given as continuationIndent. Should only be
+// called by SetContinuationIndent outside testing setups.
+func newContinuationRegex(continuationIndent uint) (regex *regexp.Regexp, e error) {
+	regex, e = regexp.Compile(fmt.Sprintf(`\A[ ]{%d}\S[^\r\n]*\n?$`, continuationIndent))
+	return
+}
+
+// setContinuationRegex sets continuationRegex for TrailerValidator
+// based on the new value given as continuationIndent. Should only be
+// called by SetContinuationIndent outside testing setups.
+func (validator *TrailerValidator) setContinuationRegex(continuationIndent uint) (e error) {
+	var regex *regexp.Regexp
+	regex, e = newContinuationRegex(continuationIndent)
+	if e == nil {
+		validator.continuationRegex = regex
+	}
+	return
+}
+
+// SetContinuationIndent sets the continuation indent.
+func (validator *TrailerValidator) SetContinuationIndent(indent uint) (e error) {
+	if indent < 1 {
+		e = errors.New("continuationIndent should be > 0")
+		return
+	}
+	validator.continuationIndent = indent
+	validator.setContinuationRegex(indent)
+	return e
 }
 
 func (validator *TrailerValidator) Validate(reader io.Reader) (e error) {
@@ -134,7 +173,7 @@ func (validator *TrailerValidator) ValidateString(possibleTrailer string) (e err
 	return validator.ValidateStringWithLine(possibleTrailer, 1)
 }
 
-// ValidateString validates a trailer block.
+// ValidateStringWithLine validates a trailer block.
 //
 // `startLine` > 0 specifies the line
 // on which the string starts in the original message, assuming that the trailer
@@ -176,7 +215,7 @@ func (e InvalidKeyError) Error() string {
 }
 
 // ValidateKey checks whether the key of a trailer is valid (is included in the
-// required or optional keys). Does NOT
+// required or optional keys).
 func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (e error) {
 
 	var keyError = InvalidKeyError{Expected: validator.GetKeys(), Received: possibleKey, Line: lineNum}
@@ -242,10 +281,6 @@ func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bo
 // not, by the validation definition used here, continue to another line.
 func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, e error) {
 	var errs []error
-
-	if e := validator.ValidateLineLength(possibleKeyValue, lineNum); e != nil {
-		errs = append(errs, e)
-	}
 
 	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
 	if matches == nil {
@@ -317,6 +352,27 @@ func (validator *TrailerValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	return validator.ValidateScannerWithLine(scanner, 0)
 }
 
+// EnsureRequiredKeys checks that all required keys are found in the trailers
+// after validation has been performed.
+func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
+
+	var missingRequired []string
+	var presentKeys []string
+	for _, trailer := range validator.Trailers {
+		presentKeys = append(presentKeys, trailer.Key)
+	}
+	for key := range validator.requiredKeys {
+		if !slices.Contains(presentKeys, key) {
+			missingRequired = append(missingRequired, key)
+		}
+	}
+
+	if len(missingRequired) > 0 {
+		e = MissingRequiredKeyError{Missing: missingRequired}
+	}
+	return
+}
+
 // ValidateScanner validates the content returned by the scanner. `scanner` is expected
 // to be a line-by-line scanner. `timesScanned` specifies
 // the number of times .Scan() has been called on `scanner`, representing the
@@ -335,6 +391,10 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 	for scner.Scan() {
 		var line string = scner.Text()
 		var tempTrailer Trailer
+
+		if e = validator.ValidateLineLength(line, scner.TimesScanned); e != nil {
+			errs = append(errs, e)
+		}
 
 		tempTrailer, keyValueError = validator.ValidateKeyValue(line, scner.TimesScanned)
 		if keyValueError == nil {
@@ -372,20 +432,8 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 
 	}
 
-	// check that all required keys are set
-	var missingRequired []string
-	var presentKeys []string
-	for _, trailer := range validator.Trailers {
-		presentKeys = append(presentKeys, trailer.Key)
-	}
-	for key := range validator.requiredKeys {
-		if !slices.Contains(presentKeys, key) {
-			missingRequired = append(missingRequired, key)
-		}
-	}
-
-	if len(missingRequired) > 0 {
-		errs = append(errs, MissingRequiredKeyError{Missing: missingRequired})
+	if e = validator.EnsureRequiredKeys(); e != nil {
+		errs = append(errs, e)
 	}
 
 	if len(errs) > 0 {

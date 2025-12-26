@@ -17,9 +17,9 @@ import (
 
 // MessageValidator validates a git commit message.
 type MessageValidator struct {
-	HeaderValidator  header.HeaderValidator
-	BodyValidator    body.BodyValidator
-	TrailerValidator trailer.TrailerValidator
+	HeaderValidator  *header.HeaderValidator
+	BodyValidator    *body.BodyValidator
+	TrailerValidator *trailer.TrailerValidator
 
 	FoundHeader, FoundBody, FoundTrailer bool
 }
@@ -33,17 +33,17 @@ func (validator *MessageValidator) Reset() {
 
 func NewDefaultMessageValidator() (validator *MessageValidator) {
 	validator, _ = NewMessageValidator(
-		*header.NewDefaultHeaderValidator(),
-		*body.NewDefaultBodyValidator(),
-		*trailer.NewDefaultTrailerValidator(),
+		header.NewDefaultHeaderValidator(),
+		body.NewDefaultBodyValidator(),
+		trailer.NewDefaultTrailerValidator(),
 	)
 	return validator
 }
 
 func NewMessageValidator(
-	headerValidator header.HeaderValidator,
-	bodyValidator body.BodyValidator,
-	trailerValidator trailer.TrailerValidator,
+	headerValidator *header.HeaderValidator,
+	bodyValidator *body.BodyValidator,
+	trailerValidator *trailer.TrailerValidator,
 ) (messageValidator *MessageValidator, e error) {
 	return &MessageValidator{
 		HeaderValidator:  headerValidator,
@@ -123,7 +123,15 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	// if only header found, fine: return
 	if !scner.Scan() {
 
-		if e := validator.ValidateBreakingChange(); e != nil {
+		if e = validator.ValidateBreakingChange(); e != nil {
+			errs = append(errs, e)
+		}
+
+		// Need to check here separately as required keys would not
+		// have been checked. Could technically just check whether there
+		// are any required keys? Would be faster, and probably less error
+		// prone. Does give the proper error message this way, though.
+		if e = validator.TrailerValidator.EnsureRequiredKeys(); e != nil {
 			errs = append(errs, e)
 		}
 
@@ -184,7 +192,7 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 		errs = append(errs, e)
 	}
 
-	if e := validator.ValidateBreakingChange(); e != nil {
+	if e = validator.ValidateBreakingChange(); e != nil {
 		errs = append(errs, e)
 	}
 

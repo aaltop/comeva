@@ -68,27 +68,43 @@ func (h Header) String() string {
 // HeaderValidator validates a commit message's header.
 type HeaderValidator struct {
 	// Regexp used to pick out parts of the header.
-	header regexp.Regexp
-	// accepted words for type
+	header *regexp.Regexp
+	// Accepted words for type.
 	types []string
 	// Accepted words for scope.
 	scopes []string
 	// Accepted words for verb.
 	verbs []string
-	// minimum and maximum.
-	headerLength utils.Bounds[uint]
+	// Minimum and maximum.
+	lineLength utils.Bounds[uint]
 
 	// The content of the header in an easy accessible format.
 	Header Header
 }
 
-// SetHeaderLength ensures that the header length's min and max are
+// Equal reports whether the two HeaderValidators are equal.
+func (validator *HeaderValidator) Equal(other *HeaderValidator) bool {
+	if validator == nil || other == nil {
+		return validator == other
+	}
+
+	// NOTE: need to ensure that the two (for all the slices here) are sorted. The validator itself
+	// does not require sort order for equality in behaviour, but this comparison
+	// does.
+	return slices.Compare(validator.types, other.types) == 0 &&
+		slices.Compare(validator.scopes, other.scopes) == 0 &&
+		slices.Compare(validator.verbs, other.verbs) == 0 &&
+		validator.lineLength == other.lineLength &&
+		validator.header.String() == other.header.String()
+}
+
+// SetLineLength ensures that the line length's min and max are
 // valid and sets them in the validator, returning a non-nil error
 // if the values are not.
-func (validator *HeaderValidator) SetHeaderLength(min, max uint) (e error) {
+func (validator *HeaderValidator) SetLineLength(min, max uint) (e error) {
 	bounds, e := utils.NewBounds(min, max, false, false)
 	if e == nil {
-		validator.headerLength = bounds
+		validator.lineLength = bounds
 	}
 	return e
 }
@@ -100,23 +116,26 @@ func (validator *HeaderValidator) Reset() {
 
 func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	h = &HeaderValidator{}
-	h.header = *header
+	h.header = header
 	return
 }
 
 // NewHeaderValidator returns a new HeaderValidator.
 // The arguments types, scopes, and verbs define acceptable values for the
-// type, scope, and verb. The headerLength argument sets minimum and maximum length.
-// If the headerLength is invalid, a non-nil error is returned.
-func NewHeaderValidator(types, scopes, verbs []string, headerLength [2]uint) (h *HeaderValidator, e error) {
+// type, scope, and verb. The lineLength argument sets minimum and maximum length.
+// If the lineLength is invalid, a non-nil error is returned.
+func NewHeaderValidator(types, scopes, verbs []string, lineLength [2]uint) (h *HeaderValidator, e error) {
 	h = &HeaderValidator{}
 
-	h.header = *header
+	h.header = header
+	slices.Sort(types)
 	h.types = types
+	slices.Sort(scopes)
 	h.scopes = scopes
+	slices.Sort(verbs)
 	h.verbs = verbs
 	e = nil
-	e = h.SetHeaderLength(headerLength[0], headerLength[1])
+	e = h.SetLineLength(lineLength[0], lineLength[1])
 
 	return h, e
 }
@@ -147,7 +166,7 @@ func (validator *HeaderValidator) Help() string {
 		"	<description>: <verb> <content>\n" +
 		fmt.Sprintf("	<verb>: (%s)\n", verb) +
 		fmt.Sprintln("	<content>: Any content") +
-		fmt.Sprintf("	minimum and maximum length: %v\n", validator.headerLength)
+		fmt.Sprintf("	minimum and maximum length: %v\n", validator.lineLength)
 }
 
 type InvalidError struct{}
@@ -187,17 +206,17 @@ func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
 }
 
 // Validate the length of the header.
-func (validator *HeaderValidator) ValidateHeaderLength(possibleHeader string) (e error) {
+func (validator *HeaderValidator) ValidateLength(possibleHeader string) (e error) {
 	e = nil
 
-	var lower, upper = int(validator.headerLength.Lower), int(validator.headerLength.Upper)
+	var lower, upper = int(validator.lineLength.Lower), int(validator.lineLength.Upper)
 	if lower == 0 && upper == 0 {
 		return
 	}
 
 	// not exactly sure why len() returns an int in the first place?
-	if !validator.headerLength.Contains(uint(len(possibleHeader))) {
-		e = validators.InvalidLineLengthError{Expected: validator.headerLength, Received: uint(len(possibleHeader)), Line: 1}
+	if !validator.lineLength.Contains(uint(len(possibleHeader))) {
+		e = validators.InvalidLineLengthError{Expected: validator.lineLength, Received: uint(len(possibleHeader)), Line: 1}
 	}
 	return e
 }
@@ -303,7 +322,7 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 		return InvalidError{}
 	}
 
-	if err := validator.ValidateHeaderLength(possibleHeader); err != nil {
+	if err := validator.ValidateLength(possibleHeader); err != nil {
 		errs = append(errs, err)
 	}
 

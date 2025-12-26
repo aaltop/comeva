@@ -45,6 +45,7 @@ func helpMessage() {
 }
 
 func getHeaderValidator() (headerValidator *headerValidation.HeaderValidator) {
+
 	var e error
 	headerValidator, e = headerValidation.NewHeaderValidator(
 		[]string{"feat", "fix"},

@@ -62,7 +62,6 @@ func InvalidKeyValue() []string {
 	return []string{
 		"BREAKING CHANGE: key's got a space, no good",
 		ValidKey()[0] + ":no space after the colon, no good",
-		ValidKey()[0] + ": otherwise fine, but the content in the trailers should also be limited in the number of columns on one line",
 		ValidKey()[0] + ":  there should be only one space after colon",
 	}
 }
@@ -141,6 +140,19 @@ func TestValidateScanner(t *testing.T) {
 	}
 
 	RunTestTrailerBlock(validation, t)
+}
+
+// There is no invalid continuation if a line is too long.
+func TestNoInvalidContinuationError(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var trailer = "BREAKING-CHANGE: breaking change 1\n" +
+		"BREAKING-CHANGE: this line is too long, but should not cause an InvalidValueContinuationError for the previous line"
+
+	var unexpected = &InvalidValueContinuationError{}
+	if e := validator.ValidateString(trailer); errors.As(e, unexpected) {
+		t.Errorf("Unexpected error: %v\nWhole error:\n%v", unexpected, e)
+	}
 }
 
 // Key-value pairs are validated correctly. Should NOT consider trailers with
@@ -348,12 +360,34 @@ func TestDefaultBounds(t *testing.T) {
 	var validator = FixtureValidator()
 
 	var trailer = ValidKey()[0] + ": A value that is far too long to exist on just this one line I'm fairly sure"
-	if e := validator.ValidateString(trailer); e == nil {
+	if e := validator.ValidateLineLength(trailer, 1); e == nil {
 		t.Error("Invalid, too long line was found to be valid")
 	}
 
 	validator.SetLineLength(0, 0)
-	if e := validator.ValidateString(trailer); e != nil {
+	if e := validator.ValidateLineLength(trailer, 1); e != nil {
 		t.Errorf("Unexpected error: %v", e)
+	}
+}
+
+func TestSetContinuationIndent(t *testing.T) {
+	var validator = FixtureValidator()
+	var new uint = 10
+	validator.SetContinuationIndent(new)
+	if validator.continuationIndent != new {
+		t.Errorf("Expected continuationIndent to be %d, was %v", new, validator.continuationIndent)
+	}
+}
+
+// Setting a new continuation indent also sets the regex.
+func TestSetContinuationIndentSetsRegex(t *testing.T) {
+	var validator = FixtureValidator()
+	var new uint = 10
+	validator.SetContinuationIndent(new)
+	var expectedRegex, _ = newContinuationRegex(new)
+	var expected = expectedRegex.String()
+	var received = validator.continuationRegex.String()
+	if received != expected {
+		t.Errorf("ContinuationRegexes did not match:\nExpected:\n%s\nReceived:\n%s", expected, received)
 	}
 }
