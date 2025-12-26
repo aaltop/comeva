@@ -2,14 +2,15 @@ package main
 
 import (
 	"bufio"
-	bodyValidation "comeva/validators/body"
-	headerValidation "comeva/validators/header"
-	messageValidation "comeva/validators/message"
-	trailerValidation "comeva/validators/trailer"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
+
+	bodyValidation "comeva/validators/body"
+	headerValidation "comeva/validators/header"
+	messageValidation "comeva/validators/message"
+	trailerValidation "comeva/validators/trailer"
 )
 
 var flagSet = flag.NewFlagSet("", flag.ExitOnError)
@@ -17,6 +18,7 @@ var flagSet = flag.NewFlagSet("", flag.ExitOnError)
 var helpFlag = flagSet.Bool("help", false, "print help")
 var configFile = flagSet.String("config-file", "", "file path for configuration file")
 var commitFile = flagSet.String("commit-file", "", "file path for commit file")
+var verboseFlag = flagSet.Int("verbosity", 0, "program verbosity, lower means less verbose, higher more verbose")
 
 func usageMessage() {
 	var argsOutput = flagSet.Output()
@@ -112,23 +114,33 @@ func printStringLines(str string) {
 	}
 }
 
-func printCommitMessage(message string) {
+func (program *Program) printCommitMessage(message string) {
+	if program.verbosity < 1 {
+		return
+	}
 	var delimiterLine = "=================================================="
 	fmt.Println(delimiterLine)
 	printStringLines(message)
 	fmt.Println(delimiterLine)
 }
 
-func printAndValidateMessage(message string) (e error) {
-	printCommitMessage(message)
+// printAndValidateMessage prints the commit message if the verbosity is high
+// enough, then validate the commit message.
+func (program *Program) printAndValidateMessage(message string) (e error) {
+	program.printCommitMessage(message)
 	return validateCommitMessage(message)
 }
 
-func main() {
+type Program struct {
+	verbosity int
+}
+
+func (program *Program) main() {
 	var argsOutput = flagSet.Output()
 
 	flagSet.Usage = usageMessage
 	flagSet.Parse(os.Args[1:])
+	program.verbosity = *verboseFlag
 
 	var args []string = flagSet.Args()
 	var commitFileSpecified = len(*commitFile) > 0
@@ -153,7 +165,7 @@ func main() {
 	var commitMessage string
 	if numArgs == 1 {
 		commitMessage = args[0]
-		e = printAndValidateMessage(commitMessage)
+		e = program.printAndValidateMessage(commitMessage)
 		if e != nil {
 			fmt.Printf("Found issues validating message:\n%v\n", e)
 		} else {
@@ -166,7 +178,7 @@ func main() {
 		if e != nil {
 			fmt.Println(e)
 		} else {
-			e = printAndValidateMessage(commitMessage)
+			e = program.printAndValidateMessage(commitMessage)
 			if e != nil {
 				fmt.Printf("Found issues validating file '%s':\n%v\n", *commitFile, e)
 			} else {
@@ -178,4 +190,9 @@ func main() {
 	if e != nil {
 		os.Exit(1)
 	}
+}
+
+func main() {
+	var p = Program{}
+	p.main()
 }

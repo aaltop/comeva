@@ -8,7 +8,7 @@ valid (or assumed to be), which is hardly useful. Generally,
 the scanner is much more useful anyway, as it processes in a more
 predictable way, and could potentially be passed between the three validators, header,
 body, and trailer. With the reader, content needs to be processed byte-by-byte,
-which just doesn't match how how the commit message would be processed, line-by-line
+which just doesn't match how the commit message would be processed, line-by-line
 like the scanner does it. On this point, however, it's also important to make
 sure that a _line_ scanner is passed, not some other scanner.
 
@@ -40,3 +40,7 @@ it just reports potential problems.
 # Add help messages for validators, include in program
 
 Like in the header, something about what is expected of each part (line length etc.)
+
+# Add info to errors about part (e.g. Body: Line X: (issue with body))
+
+# ? Save errors as per-line and print them out next to the line of text
