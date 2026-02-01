@@ -27,6 +27,8 @@ header:
 	if e := validator.UnmarshalYAML([]byte(yamlText)); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
+	// ensure that validation works when only one sub-validator is defined in config
+	validator.ValidateString("Any old string")
 
 	var received = validator.HeaderValidator
 
@@ -49,6 +51,8 @@ body:
 	if e := validator.UnmarshalYAML([]byte(yamlText)); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
+	// ensure that validation works when only one sub-validator is defined in config
+	validator.ValidateString("Any old string")
 
 	var received = validator.BodyValidator
 
@@ -72,6 +76,8 @@ trailer:
 	if e := validator.UnmarshalYAML([]byte(yamlText)); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
+	// ensure that validation works when only one sub-validator is defined in config
+	validator.ValidateString("Any old string")
 
 	var received = validator.TrailerValidator
 	received.SetContinuationIndent(continuationIndent)
