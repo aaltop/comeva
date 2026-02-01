@@ -31,6 +31,7 @@ func (validator *MessageValidator) Reset() {
 	validator.TrailerValidator.Reset()
 }
 
+// NewDefaultMessageValidator creates the base (zero-value) MessageValidator.
 func NewDefaultMessageValidator() (validator *MessageValidator) {
 	validator, _ = NewMessageValidator(
 		header.NewDefaultHeaderValidator(),

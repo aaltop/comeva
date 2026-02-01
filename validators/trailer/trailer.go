@@ -98,6 +98,7 @@ func (validator *TrailerValidator) Reset() {
 	validator.Trailers = []Trailer{}
 }
 
+// NewDefaultTrailerValidator creates the base (zero-value) TrailerValidator.
 func NewDefaultTrailerValidator() (validator *TrailerValidator) {
 	validator, e := NewTrailerValidator(make(KeyMap), make(KeyMap), 2, [2]uint{0, 0})
 	if e != nil {
