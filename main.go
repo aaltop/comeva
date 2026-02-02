@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"comeva/misc/config"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"
@@ -16,7 +17,7 @@ import (
 var flagSet = flag.NewFlagSet("", flag.ContinueOnError)
 
 var helpFlag = flagSet.Bool("help", false, "print help")
-var configFile = flagSet.String("config-file", "", "file path for configuration file")
+var configFile = flagSet.String("config-file", "", "file path for configuration file for setting command line values")
 var validatorConfigFile = flagSet.String("validator-config-file", "", "file path for configuration of validators")
 var commitFile = flagSet.String("commit-file", "", "file path for commit file")
 var verboseFlag = flagSet.Int("verbosity", 0, "program verbosity, lower means less verbose, higher more verbose")
@@ -215,6 +216,7 @@ func (program *Program) printAndValidateMessage(message string) (e error) {
 type Program struct {
 	verbosity           int
 	validatorConfigFile string
+	config              *config.Config
 }
 
 func (program *Program) main() (exitState *ExitState) {

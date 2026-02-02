@@ -1,4 +1,4 @@
-# Evaluate sensibility of having the io.Reader Validate method.
+# ? Evaluate sensibility of having the io.Reader Validate method.
 
 It's not very
 elegant, because it just processes the content in whole, assuming that
@@ -12,11 +12,9 @@ which just doesn't match how the commit message would be processed, line-by-line
 like the scanner does it. On this point, however, it's also important to make
 sure that a _line_ scanner is passed, not some other scanner.
 
+I guess it's fine? doesn't really matter too much.
+
 # Add config file
-
-## Validator config file
-
-Config file reading for creating the commit message validator from.
 
 ## comeva config file
 

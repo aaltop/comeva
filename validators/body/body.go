@@ -25,7 +25,7 @@ func (validator *BodyValidator) Reset() {
 	validator.Body = ""
 }
 
-// NewDefaultBodyValidator creates the base (zero-value) BodyValidator.
+// NewDefaultBodyValidator creates the base BodyValidator.
 func NewDefaultBodyValidator() (validator *BodyValidator) {
 	return &BodyValidator{}
 }

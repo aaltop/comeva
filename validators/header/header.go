@@ -114,7 +114,7 @@ func (validator *HeaderValidator) Reset() {
 	validator.Header = Header{}
 }
 
-// NewDefaultHeaderValidator creates the base (zero-value) HeaderValidator.
+// NewDefaultHeaderValidator creates the base HeaderValidator.
 func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	h = &HeaderValidator{}
 	h.header = header
