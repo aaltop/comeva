@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -13,14 +12,6 @@ import (
 	messageValidation "comeva/validators/message"
 	trailerValidation "comeva/validators/trailer"
 )
-
-var flagSet = flag.NewFlagSet("", flag.ContinueOnError)
-
-var helpFlag = flagSet.Bool("help", false, "print help")
-var configFile = flagSet.String("config-file", "", "file path for configuration file for setting command line values")
-var validatorConfigFile = flagSet.String("validator-config-file", "", "file path for configuration of validators")
-var commitFile = flagSet.String("commit-file", "", "file path for commit file")
-var verboseFlag = flagSet.Int("verbosity", 0, "program verbosity, lower means less verbose, higher more verbose")
 
 // exitCode describes the exit code passed to os.Exit. Should be kept in the
 // range [0, 125].
@@ -76,32 +67,6 @@ func (exitState *ExitState) handlePanic(panicValue any) {
 	exitState.Code = UNCAUGHT_ERROR
 }
 
-func usageMessage() {
-	var argsOutput = flagSet.Output()
-	fmt.Fprintln(argsOutput, "Usage:")
-	fmt.Fprintln(argsOutput, "  comeva [flags] --commit-file <commit_file>")
-	fmt.Fprintln(argsOutput, "  	Validate the commit message in the file <commit_file>.")
-	fmt.Fprintln(argsOutput, "  comeva [flags] <commit_message>")
-	fmt.Fprintln(argsOutput, "  	Validate the commit message <commit_message>, passed as a string.")
-	fmt.Fprintln(argsOutput, "  comeva --help")
-	fmt.Fprintln(argsOutput, "  	Print help.")
-}
-
-func helpMessage() {
-	// TODO: should this maybe just create the message, then it could be output
-	// to different streams depending on whether it's error output or --help output?
-	var argsOutput = flagSet.Output()
-
-	fmt.Fprint(argsOutput, "\nCoMeVa (Commit Message Validator) is a tool for validating git commit messages.\n\n")
-
-	usageMessage()
-
-	fmt.Fprintln(argsOutput)
-
-	fmt.Fprint(argsOutput, "Options:\n")
-	flagSet.PrintDefaults()
-}
-
 func getHeaderValidator() (headerValidator *headerValidation.HeaderValidator) {
 
 	var e error
@@ -147,15 +112,19 @@ func (program *Program) getMessageValidator() (messageValidator *messageValidati
 	messageValidator = &messageValidation.MessageValidator{}
 	*messageValidator = *messageValidation.NewDefaultMessageValidator()
 	// if validator settings are provided through a file
-	if len(program.validatorConfigFile) > 0 {
+	if len(program.args.ValidatorConfigFile) > 0 {
 		var data []byte
-		data, e = os.ReadFile(program.validatorConfigFile)
+		data, e = os.ReadFile(program.args.ValidatorConfigFile)
 		if e != nil {
-			panic(ExitState{Reason: fmt.Errorf("Error reading validator config: %v\n", e), Code: PROGRAM_ERROR})
+			panic(ExitState{Reason: fmt.Errorf("Error reading validator config in '%s': %v\n", program.args.ValidatorConfigFile, e), Code: PROGRAM_ERROR})
 		}
 		e = messageValidator.UnmarshalYAML(data)
 		if e != nil {
-			panic(ExitState{Reason: fmt.Errorf("Error unmarshaling validator config: %v\n", e), Code: PROGRAM_ERROR})
+			panic(ExitState{
+				Reason: fmt.Errorf(
+					"Error unmarshaling validator config in '%s': %v\n",
+					program.args.ValidatorConfigFile, e),
+				Code: PROGRAM_ERROR})
 		}
 		return messageValidator
 	}
@@ -197,7 +166,7 @@ func printStringLines(str string) {
 }
 
 func (program *Program) printCommitMessage(message string) {
-	if program.verbosity < 1 {
+	if program.args.Verbosity < 1 {
 		return
 	}
 	var delimiterLine = "=================================================="
@@ -214,9 +183,8 @@ func (program *Program) printAndValidateMessage(message string) (e error) {
 }
 
 type Program struct {
-	verbosity           int
-	validatorConfigFile string
-	config              *config.Config
+	args   *Args
+	config *config.Config
 }
 
 func (program *Program) main() (exitState *ExitState) {
@@ -230,43 +198,29 @@ func (program *Program) main() (exitState *ExitState) {
 		exitState.handlePanic(panicValue)
 	}()
 
-	var argsOutput = flagSet.Output()
-
-	flagSet.Usage = usageMessage
-	// TODO: is it possible to suppress the "flag provided but not defined"?
-	e = flagSet.Parse(os.Args[1:])
+	program.args, e = NewArgs()
 	if e != nil {
+		exitState.Reason = e
 		exitState.Code = PROGRAM_ERROR
 		return
 	}
-	program.verbosity = *verboseFlag
 
-	var args []string = flagSet.Args()
-	var commitFileSpecified = len(*commitFile) > 0
-	var numArgs = len(args)
-
-	program.validatorConfigFile = *validatorConfigFile
-
-	// check validity of input
-	switch {
-	case *helpFlag:
+	if program.args.HelpFlag {
 		helpMessage()
+		exitState.Code = SUCCESSFUL
 		return
-	case (numArgs < 1 && !commitFileSpecified) || (numArgs == 1 && commitFileSpecified):
-		fmt.Fprint(argsOutput, "Error: specify either a commit message string or a commit message file.\n\n")
+	}
+
+	if e = program.args.Validate(); e != nil {
 		helpMessage()
+		exitState.Reason = e
 		exitState.Code = PROGRAM_ERROR
 		return
-	case numArgs != 1 && !commitFileSpecified:
-		fmt.Fprintf(argsOutput, "Error: expected one argument, got %d\n\n", len(args))
-		helpMessage()
-		exitState.Code = PROGRAM_ERROR
-		return exitState
 	}
 
 	var commitMessage string
-	if numArgs == 1 {
-		commitMessage = args[0]
+	if program.args.NumNonFlag == 1 {
+		commitMessage = program.args.Raw[0]
 		e = program.printAndValidateMessage(commitMessage)
 		if e != nil {
 			fmt.Printf("Found issues validating message:\n%v\n", e)
@@ -276,7 +230,7 @@ func (program *Program) main() (exitState *ExitState) {
 
 	} else {
 
-		commitMessage, e = readFileString(*commitFile)
+		commitMessage, e = readFileString(program.args.CommitFile)
 		if e != nil {
 			exitState.Reason = fmt.Errorf("Error reading commit file: %v\n", e)
 			exitState.Code = PROGRAM_ERROR
@@ -284,9 +238,9 @@ func (program *Program) main() (exitState *ExitState) {
 		}
 		e = program.printAndValidateMessage(commitMessage)
 		if e != nil {
-			fmt.Printf("Found issues validating file '%s':\n%v\n", *commitFile, e)
+			fmt.Printf("Found issues validating file '%s':\n%v\n", program.args.CommitFile, e)
 		} else {
-			fmt.Printf("No issues found with file '%s'\n", *commitFile)
+			fmt.Printf("No issues found with file '%s'\n", program.args.CommitFile)
 		}
 	}
 

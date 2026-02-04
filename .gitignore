@@ -20,9 +20,11 @@
 
 !.gitignore
 !go.mod
-!main.go
 !README.md
 !TODO.md
+
+!main.go
+!args.go
 
 # FILES
 # ============
