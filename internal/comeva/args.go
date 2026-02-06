@@ -1,6 +1,6 @@
 // Utilities for handling command line interaction.
 
-package main
+package comeva
 
 import (
 	"errors"
@@ -17,8 +17,8 @@ var validatorConfigFile = flagSet.String("validator-config-file", "", "file path
 var commitFile = flagSet.String("commit-file", "", "file path for commit file")
 var verbosity = flagSet.Int("verbosity", 0, "program verbosity, lower means less verbose, higher more verbose")
 
-// Args handles the arguments passed to the program.
-type Args struct {
+// args handles the arguments passed to the program.
+type args struct {
 	HelpFlag                                    bool
 	ConfigFile, ValidatorConfigFile, CommitFile string
 	Verbosity                                   int
@@ -30,37 +30,37 @@ type Args struct {
 	Raw []string
 }
 
-func NewArgs() (args *Args, e error) {
-	args = &Args{}
+func newArgs() (arg *args, e error) {
+	arg = &args{}
 
 	flagSet.Usage = usageMessage
 	// TODO: is it possible to suppress the "flag provided but not defined"?
 	e = flagSet.Parse(os.Args[1:])
 	if e != nil {
-		return args, fmt.Errorf("Error parsing arguments: %v\n", e)
+		return arg, fmt.Errorf("Error parsing arguments: %v\n", e)
 	}
 
-	args.HelpFlag = *helpFlag
-	args.ConfigFile = *configFile
-	args.ValidatorConfigFile = *validatorConfigFile
-	args.CommitFile = *commitFile
-	args.Raw = flag.Args()
-	args.NumNonFlag = len(args.Raw)
-	args.Verbosity = *verbosity
+	arg.HelpFlag = *helpFlag
+	arg.ConfigFile = *configFile
+	arg.ValidatorConfigFile = *validatorConfigFile
+	arg.CommitFile = *commitFile
+	arg.Raw = flag.Args()
+	arg.NumNonFlag = len(arg.Raw)
+	arg.Verbosity = *verbosity
 
 	return
 }
 
 // CommitFileSpecified reports whether the commitFile was specified as an argument.
-func (args *Args) CommitFileSpecfied() (b bool) {
-	return len(args.CommitFile) > 0
+func (arg *args) CommitFileSpecfied() (b bool) {
+	return len(arg.CommitFile) > 0
 }
 
 // Validate validates the passed arguments.
-func (args *Args) Validate() (e error) {
+func (arg *args) Validate() (e error) {
 
-	var numArgs = args.NumNonFlag
-	var commitFileSpecified = args.CommitFileSpecfied()
+	var numArgs = arg.NumNonFlag
+	var commitFileSpecified = arg.CommitFileSpecfied()
 
 	switch {
 	case (numArgs < 1 && !commitFileSpecified) || (numArgs == 1 && commitFileSpecified):
