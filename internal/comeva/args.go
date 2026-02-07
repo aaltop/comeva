@@ -7,15 +7,62 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"comeva/misc/config"
 )
 
 var flagSet = flag.NewFlagSet("", flag.ContinueOnError)
 
-var helpFlag = flagSet.Bool("help", false, "print help")
-var configFile = flagSet.String("config-file", "", "file path for configuration file for setting command line values")
-var validatorConfigFile = flagSet.String("validator-config-file", "", "file path for configuration of validators")
-var commitFile = flagSet.String("commit-file", "", "file path for commit file")
-var verbosity = flagSet.Int("verbosity", 0, "program verbosity, lower means less verbose, higher more verbose")
+// flagString represents a the string name of a command line flag.
+// Should not be instantiated directly, instead see [flagNames].
+type flagString string
+
+// flagNames holds the string name of each command line flag.
+var flagNames = struct {
+	Help, ConfigFile, ValidatorConfigFile,
+	CommitFile, Verbosity flagString
+}{
+	Help:                "help",
+	ConfigFile:          "config-file",
+	ValidatorConfigFile: "validator-config-file",
+	CommitFile:          "commit-file",
+	Verbosity:           "verbosity",
+}
+
+var helpFlag = flagSet.Bool(string(flagNames.Help), false, "print help")
+var configFile = flagSet.String(
+	string(flagNames.ConfigFile), "",
+	"file path for configuration file for setting command line values")
+var validatorConfigFile = flagSet.String(
+	string(flagNames.ValidatorConfigFile), "",
+	"file path for configuration of validators")
+var commitFile = flagSet.String(string(flagNames.CommitFile), "", "file path for commit file")
+
+const verbosityDefault int = 0
+
+var verbosity = flagSet.Int(
+	string(flagNames.Verbosity), verbosityDefault,
+	"program verbosity, lower means less verbose, higher more verbose")
+
+// flagPassed reports whether the given flagString was passed on the
+// command line.
+func flagPassed(flagStr flagString) (passed bool) {
+	// could also just run once for all, set in map, read from that?
+
+	passed = false
+	var checkFlag = func(fl *flag.Flag) {
+		// found the flag, ignore rest
+		if passed {
+			return
+		}
+		if fl.Name == string(flagStr) {
+			passed = true
+		}
+	}
+
+	flagSet.Visit(checkFlag)
+	return
+}
 
 // args handles the arguments passed to the program.
 type args struct {
@@ -48,6 +95,48 @@ func newArgs() (arg *args, e error) {
 	arg.NumNonFlag = len(arg.Raw)
 	arg.Verbosity = *verbosity
 
+	return
+}
+
+// setFromConfig sets values in arg based on the config values in conf
+// if arg does not have the value set yet (values passed directly
+// overwrite those passed in the config file).
+func (arg *args) setFromConfig(conf config.Config) (e error) {
+	if !flagPassed(flagNames.CommitFile) {
+		arg.CommitFile = conf.CommitFile
+	}
+
+	if !flagPassed(flagNames.ValidatorConfigFile) {
+		arg.ValidatorConfigFile = conf.ValidatorConfigFile
+	}
+
+	if !flagPassed(flagNames.Verbosity) {
+		arg.Verbosity = conf.Verbosity
+	}
+
+	return
+}
+
+// readFromConfig sets arg values from a config file if a config file
+// was specified.
+func (arg *args) readFromConfig() (e error) {
+	if arg.ConfigFile == "" {
+		return nil
+	}
+
+	var data []byte
+	data, e = os.ReadFile(arg.ConfigFile)
+	if e != nil {
+		return fmt.Errorf("Error reading config file %s: %v", arg.ConfigFile, e)
+	}
+
+	var conf = config.NewDefaultConfig()
+	e = conf.UnmarshalYAML(data)
+	if e != nil {
+		return fmt.Errorf("Error unmarshaling config file %s: %v", arg.ConfigFile, e)
+	}
+
+	arg.setFromConfig(*conf)
 	return
 }
 

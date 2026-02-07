@@ -18,8 +18,8 @@ I guess it's fine? doesn't really matter too much.
 
 ## comeva config file
 
-Config file to configure the default values (commit file, validator config file)
-to be passed to comeva.
+Config file to configure the default values (commit file, validator config file,
+verbosity, etc.) to be passed to comeva.
 
 # Include optional info on type/scope/verb/trailer key
 
@@ -48,11 +48,17 @@ it just reports potential problems.
 
 Like in the header, something about what is expected of each part (line length etc.)
 
-# Add info to errors about part (e.g. Body: Line X: (issue with body))
+# Add info to errors
 
-# add standard settings file
+## about part (e.g. Body: Line X: (issue with body))
 
-Specify standard commit file, verbosity etc.
+## about the part/line in the validator config file
+
+Not too simple to add the line, though the actual part is more important
+anyway. The part is also difficult to do in a clean way, though, because
+the validation happens at different levels. It should be possible to
+keep adding info at different levels to the errors, though, using fmt.Errorf.
+
 
 # ? Add use of colors in console
 

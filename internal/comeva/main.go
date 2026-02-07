@@ -36,6 +36,8 @@ func (prog *program) main() (extState *exitState) {
 		return
 	}
 
+	prog.args.readFromConfig()
+
 	if prog.args.HelpFlag {
 		helpMessage()
 		extState.Code = SUCCESSFUL

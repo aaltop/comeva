@@ -3,8 +3,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/goccy/go-yaml"
 )
 
@@ -57,10 +55,8 @@ type configYaml struct {
 
 func (config *Config) UnmarshalYAML(data []byte) (e error) {
 	var temp configYaml
-	fmt.Println(string(data))
 	if e = yaml.Unmarshal(data, &temp); e == nil {
 		var new *Config
-		fmt.Println(temp)
 		new, e = NewConfig(temp.ValidatorConfigFile, temp.CommitFile, temp.Verbosity)
 		*config = *new
 	}
