@@ -60,23 +60,6 @@ func (validator *MessageValidator) ValidateString(possibleMessage string) (e err
 	return validator.ValidateScanner(bufio.NewScanner(strings.NewReader(possibleMessage)))
 }
 
-type UnexpectedEOFError struct {
-	Line uint
-}
-
-func (e UnexpectedEOFError) Error() string {
-	return fmt.Sprintf("Line %d: Unexpected EOF", e.Line)
-}
-
-// BreakingChangeError is returned when breaking changes are not properly
-// marked in a commit message.
-type BreakingChangeError struct {
-}
-
-func (e BreakingChangeError) Error() string {
-	return "An exclamation mark denoting a breaking change should be accompanied by a BREAKING-CHANGE key in the trailer block and vice versa"
-}
-
 // trailerEndRegex matches the end of a trailer block.
 //
 // "The group must either be at the end of the input or be the last
@@ -88,11 +71,13 @@ var trailedEndRegex = regexp.MustCompile(`---(\r?\n)?`)
 // in the header is accompanied by a BREAKING-CHANGE trailer key and vice versa.
 // To be run after a message has been processed.
 func (validator *MessageValidator) ValidateBreakingChange() (e error) {
+	// hasBreaking reports whether the trailers have a BREAKING-CHANGE key
 	var hasBreaking bool = slices.ContainsFunc(validator.TrailerValidator.Trailers,
 		func(tr trailer.Trailer) bool {
 			return tr.Key == "BREAKING-CHANGE"
 		},
 	)
+
 	if validator.HeaderValidator.Header.Breaking {
 		if !hasBreaking {
 			e = BreakingChangeError{}
@@ -112,7 +97,11 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	var errs []error
 
 	if !scner.Scan() {
-		return UnexpectedEOFError{Line: scner.TimesScanned}
+		return UnexpectedEOFError{
+			ValidatorError: validators.ValidatorError{
+				Line: scner.TimesScanned,
+			},
+		}
 	}
 
 	var possibleHeader string = scner.Text()

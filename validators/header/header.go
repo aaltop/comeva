@@ -170,12 +170,6 @@ func (validator *HeaderValidator) Help() string {
 		fmt.Sprintf("	minimum and maximum length: %v\n", validator.lineLength)
 }
 
-type InvalidError struct{}
-
-func (e InvalidError) Error() string {
-	return "Invalid header"
-}
-
 // Validate validates the header of a commit message, returning
 // a non-nil error if validation
 // failed at some point. This sets the Header of the validator.
@@ -217,18 +211,14 @@ func (validator *HeaderValidator) ValidateLength(possibleHeader string) (e error
 
 	// not exactly sure why len() returns an int in the first place?
 	if !validator.lineLength.Contains(uint(len(possibleHeader))) {
-		e = validators.InvalidLineLengthError{Expected: validator.lineLength, Received: uint(len(possibleHeader)), Line: 1}
+		var validatorError = validators.ValidatorError{
+			Line: 1, MessagePart: validators.MessageParts.Header}
+		e = validators.InvalidLineLengthError{
+			Expected:       validator.lineLength,
+			Received:       uint(len(possibleHeader)),
+			ValidatorError: validatorError}
 	}
 	return e
-}
-
-type InvalidScopeError struct {
-	Expected []string
-	Received string
-}
-
-func (e InvalidScopeError) Error() string {
-	return fmt.Sprintf("Header: Invalid scope '%s', should be one of %v", e.Received, e.Expected)
 }
 
 // Validate the scope (of Conventional commits syntax).
@@ -236,16 +226,14 @@ func (validator *HeaderValidator) ValidateScope(scope string) (e error) {
 	if len(validator.scopes) == 0 || slices.Contains(validator.scopes, scope) {
 		return nil
 	}
-	return InvalidScopeError{Expected: validator.scopes, Received: scope}
-}
-
-type InvalidTypeError struct {
-	Expected []string
-	Received string
-}
-
-func (e InvalidTypeError) Error() string {
-	return fmt.Sprintf("Header: Invalid type '%s', should be one of %v", e.Received, e.Expected)
+	return InvalidScopeError{
+		Expected: validator.scopes,
+		Received: scope,
+		ValidatorError: validators.ValidatorError{
+			MessagePart: validators.MessageParts.Header,
+			Line:        1,
+		},
+	}
 }
 
 // Validate the type (of Conventional commits syntax).
@@ -253,7 +241,14 @@ func (validator *HeaderValidator) ValidateType(typ string) (e error) {
 	if len(validator.types) == 0 || slices.Contains(validator.types, typ) {
 		return nil
 	}
-	return InvalidTypeError{Expected: validator.types, Received: typ}
+	return InvalidTypeError{
+		Expected: validator.types,
+		Received: typ,
+		ValidatorError: validators.ValidatorError{
+			MessagePart: validators.MessageParts.Header,
+			Line:        1,
+		},
+	}
 }
 
 // Attempt extraction of constituent parts from the description of
@@ -269,17 +264,6 @@ func (validator *HeaderValidator) processDescription(description string) (desc D
 	return desc, nil
 }
 
-type InvalidDescriptionError struct {
-	Verbs []string
-	// Received is the received description
-	Received string
-}
-
-func (e InvalidDescriptionError) Error() string {
-	return fmt.Sprintf("Header: Invalid description '%s', ", e.Received) +
-		fmt.Sprintf("should be '<verb> <content>', where <verb> is one of %v ", e.Verbs)
-}
-
 // Validate the description of a commit message.
 func (validator *HeaderValidator) ValidateDescription(description string) (desc Description, e error) {
 	e = nil
@@ -288,18 +272,14 @@ func (validator *HeaderValidator) ValidateDescription(description string) (desc 
 		validator.ValidateVerb(desc.Verb) != nil {
 		e = InvalidDescriptionError{
 			Received: description,
-			Verbs:    validator.verbs}
+			Verbs:    validator.verbs,
+			ValidatorError: validators.ValidatorError{
+				MessagePart: validators.MessageParts.Header,
+				Line:        1,
+			},
+		}
 	}
 	return desc, e
-}
-
-type InvalidVerbError struct {
-	Expected []string
-	Received string
-}
-
-func (e InvalidVerbError) Error() string {
-	return fmt.Sprintf("Header: Invalid verb '%s', should be one of %v", e.Received, e.Expected)
 }
 
 // Validate the verb of a description of a commit message.
@@ -307,7 +287,14 @@ func (validator *HeaderValidator) ValidateVerb(verb string) (e error) {
 	if len(validator.verbs) == 0 || slices.Contains(validator.verbs, verb) {
 		return nil
 	}
-	return InvalidVerbError{Expected: validator.verbs, Received: verb}
+	return InvalidVerbError{
+		Expected: validator.verbs,
+		Received: verb,
+		ValidatorError: validators.ValidatorError{
+			MessagePart: validators.MessageParts.Header,
+			Line:        1,
+		},
+	}
 }
 
 // ValidateString validates the header of a commit message, returning
@@ -320,7 +307,12 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 
 	var matches = validator.header.FindStringSubmatch(possibleHeader)
 	if matches == nil {
-		return InvalidError{}
+		return InvalidError{
+			ValidatorError: validators.ValidatorError{
+				MessagePart: validators.MessageParts.Header,
+				Line:        1,
+			},
+		}
 	}
 
 	if err := validator.ValidateLength(possibleHeader); err != nil {

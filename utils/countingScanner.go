@@ -2,7 +2,7 @@ package utils
 
 import "bufio"
 
-// countingScanner wraps bufio.Scanner to add a counter of times
+// CountingScanner wraps bufio.Scanner to add a counter of times
 // .Scan() has been called.
 type CountingScanner struct {
 	Scanner      *bufio.Scanner

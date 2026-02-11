@@ -54,7 +54,10 @@ func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error
 
 	var lenLine uint = uint(len(line))
 	if !validator.lineLength.Contains(lenLine) {
-		e = validators.InvalidLineLengthError{Line: lineNum, Expected: validator.lineLength, Received: lenLine}
+		var validatorError = validators.ValidatorError{
+			Line: lineNum, MessagePart: validators.MessageParts.Body}
+		e = validators.InvalidLineLengthError{
+			ValidatorError: validatorError, Expected: validator.lineLength, Received: lenLine}
 	}
 	return
 }

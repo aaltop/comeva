@@ -14,13 +14,6 @@ sure that a _line_ scanner is passed, not some other scanner.
 
 I guess it's fine? doesn't really matter too much.
 
-# Add config file
-
-## comeva config file
-
-Config file to configure the default values (commit file, validator config file,
-verbosity, etc.) to be passed to comeva.
-
 # Include optional info on type/scope/verb/trailer key
 
 For "feat" type, something like "A feature was added, or changed in such a
@@ -93,3 +86,18 @@ developer should really need to be reminded to check the accuracy is
 questionable. Having this feature might just mean that it is mindlessly
 mashed through (even though it would be optional and off by default),
 so deving it might not be that worthwhile.
+
+# Add testing to main program functionality
+
+The validators etc. are decently tested, but could also have the main
+program functionalities tested too. Might need to refactor things
+in some places to be more testing friendly.
+
+# Disallow use of certain punctuation in message part of header
+
+Shouldn't really use periods, for example. Then again, that pertains
+specifically for ending the header "sentence", whereas it might be
+sensible to allow the use of periods as they are used when referring
+to a method, for example: "Add ClassName.methodName tests" or something
+like that. Then again, it might be better to just write it differently,
+like "Add tests for \<X\>". 

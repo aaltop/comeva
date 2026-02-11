@@ -184,15 +184,6 @@ func (validator *TrailerValidator) ValidateStringWithLine(possibleTrailer string
 	return validator.ValidateScannerWithLine(bufio.NewScanner(strings.NewReader(possibleTrailer)), startLine-1)
 }
 
-type InvalidTrailerError struct {
-	Reason string
-	Line   uint
-}
-
-func (e InvalidTrailerError) Error() string {
-	return fmt.Sprintf("Line %d: %s", e.Line, e.Reason)
-}
-
 // GetKeys returns all the keys held by validator. There is no guarantee of
 // a specific order.
 func (validator *TrailerValidator) GetKeys() (keys []string) {
@@ -205,21 +196,18 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 	return
 }
 
-type InvalidKeyError struct {
-	Expected []string
-	Received string
-	Line     uint
-}
-
-func (e InvalidKeyError) Error() string {
-	return fmt.Sprintf("Line %d: Invalid trailer key %s, should be one of %v", e.Line, e.Received, e.Expected)
-}
-
 // ValidateKey checks whether the key of a trailer is valid (is included in the
 // required or optional keys).
 func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (e error) {
 
-	var keyError = InvalidKeyError{Expected: validator.GetKeys(), Received: possibleKey, Line: lineNum}
+	var keyError = InvalidKeyError{
+		Expected: validator.GetKeys(),
+		Received: possibleKey,
+		ValidatorError: validators.ValidatorError{
+			MessagePart: validators.MessageParts.Trailer,
+			Line:        lineNum,
+		},
+	}
 
 	if !keyRegex.MatchString(possibleKey) {
 		return keyError
@@ -240,14 +228,6 @@ func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint)
 	return keyError
 }
 
-type InvalidKeyValueError struct {
-	Line uint
-}
-
-func (e InvalidKeyValueError) Error() string {
-	return fmt.Sprintf("Line %d: No key-value pair found", e.Line)
-}
-
 func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (e error) {
 
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
@@ -260,7 +240,10 @@ func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint)
 		return validators.InvalidLineLengthError{
 			Expected: validator.lineLength,
 			Received: lineLength,
-			Line:     lineNum}
+			ValidatorError: validators.ValidatorError{
+				Line:        lineNum,
+				MessagePart: validators.MessageParts.Trailer,
+			}}
 	}
 	return
 }
@@ -285,7 +268,13 @@ func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lin
 
 	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
 	if matches == nil {
-		errs = append(errs, InvalidKeyValueError{Line: lineNum})
+		e = InvalidKeyValueError{
+			ValidatorError: validators.ValidatorError{
+				MessagePart: validators.MessageParts.Trailer,
+				Line:        lineNum,
+			},
+		}
+		errs = append(errs, e)
 		// can't really do anything else, so return early.
 		return t, errors.Join(errs...)
 	}
@@ -303,15 +292,6 @@ func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lin
 	return t, e
 }
 
-type InvalidValueContinuationError struct {
-	Indent uint
-	Line   uint
-}
-
-func (e InvalidValueContinuationError) Error() string {
-	return fmt.Sprintf("Line %d: expecting value continuation with indent %d", e.Line, e.Indent)
-}
-
 // ValidateValueContinuation checks whether the line can be a valid continuation
 // of the value of a key-value pair.
 func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuation string, lineNum uint) (e error) {
@@ -327,7 +307,11 @@ func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuatio
 			errs,
 			InvalidValueContinuationError{
 				Indent: validator.continuationIndent,
-				Line:   lineNum})
+				ValidatorError: validators.ValidatorError{
+					MessagePart: validators.MessageParts.Trailer,
+					Line:        lineNum,
+				},
+			})
 	}
 
 	if len(errs) > 0 {
@@ -335,14 +319,6 @@ func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuatio
 	}
 
 	return e
-}
-
-type MissingRequiredKeyError struct {
-	Missing []string
-}
-
-func (e MissingRequiredKeyError) Error() string {
-	return fmt.Sprintf("Required keys %v not found in trailer", e.Missing)
 }
 
 // ValidateScanner validates the content returned by the scanner. `scanner` is expected
@@ -369,7 +345,12 @@ func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
 	}
 
 	if len(missingRequired) > 0 {
-		e = MissingRequiredKeyError{Missing: missingRequired}
+		e = MissingRequiredKeyError{
+			Missing: missingRequired,
+			ValidatorError: validators.ValidatorError{
+				MessagePart: validators.MessageParts.Trailer,
+			},
+		}
 	}
 	return
 }
