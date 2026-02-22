@@ -1,4 +1,4 @@
-package comeva
+package exitstate
 
 import (
 	"fmt"
@@ -20,8 +20,8 @@ const (
 	UNCAUGHT_ERROR exitCode = 3
 )
 
-// exitState describes the exit state of the program.
-type exitState struct {
+// ExitState describes the exit state of the program.
+type ExitState struct {
 	// Reason describes the reason that caused the exit. This should only
 	// be non-nil if the reason was unexpected, i.e. when it would make sense
 	// to print the reason to stderr. For example, a validation error is an
@@ -32,30 +32,41 @@ type exitState struct {
 	Code   exitCode
 }
 
+func NewDefaultExitState() (extState *ExitState) {
+	return &ExitState{}
+}
+
 // Exit exits the program with the given [exitCode], printing first the given
 // Reason for exiting, if any.
-func (extState *exitState) Exit() {
+func (extState *ExitState) Exit() {
 	if extState.Reason != nil {
 		fmt.Fprintln(os.Stderr, extState.Reason)
 	}
 	os.Exit(int(extState.Code))
 }
 
-// handlePanic will set an appropriate [exitState] based on the passed panicValue.
+// HandlePanic will set an appropriate [ExitState] based on the passed panicValue.
 // To be called in a deferred call, where panicValue should be gotten from a
-// recover() call made inside the deferred function.
-func (extState *exitState) handlePanic(panicValue any) {
+// recover() call made inside the deferred function. For example:
+//
+//	defer func() {
+//		var panicValue any = recover()
+//		extState.HandlePanic(panicValue)
+//	}()
+//
+// In a program
+func (extState *ExitState) HandlePanic(panicValue any) {
 
 	if panicValue == nil {
 		return
 	}
 	var ok bool
-	var temp exitState
-	temp, ok = panicValue.(exitState)
+	var temp ExitState
+	temp, ok = panicValue.(ExitState)
 	if ok {
 		*extState = temp
 		return
 	}
-	extState.Reason = fmt.Errorf("%v", panicValue)
+	extState.Reason = fmt.Errorf("Unkown panic: %v", panicValue)
 	extState.Code = UNCAUGHT_ERROR
 }

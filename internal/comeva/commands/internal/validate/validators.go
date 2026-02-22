@@ -1,11 +1,14 @@
 // validation contains utilities used in validating the commit message.
 
-package comeva
+package validate
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
+	"comeva/internal/comeva/io/ansi"
+	exitState "comeva/internal/exitState"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"
@@ -52,24 +55,31 @@ func getTrailerValidator() (trailerValidator *trailerValidation.TrailerValidator
 }
 
 func (prog *program) getMessageValidator() (messageValidator *messageValidation.MessageValidator) {
+	var errorColor *ansi.ColorScheme = ansi.BasicColorSchemes.Error
 	var e error
 
 	messageValidator = &messageValidation.MessageValidator{}
 	*messageValidator = *messageValidation.NewDefaultMessageValidator()
-	// if validator settings are provided through a file
-	if len(prog.args.ValidatorConfigFile) > 0 {
+	// if validator settings are provided through a file (if they're not, the only
+	// other option is the standard setup provided below this block)
+	if len(prog.Args.ValidatorConfigFile) > 0 {
 		var data []byte
-		data, e = os.ReadFile(prog.args.ValidatorConfigFile)
+		data, e = os.ReadFile(prog.Args.ValidatorConfigFile)
 		if e != nil {
-			panic(exitState{Reason: fmt.Errorf("Error reading validator config in '%s': %v\n", prog.args.ValidatorConfigFile, e), Code: PROGRAM_ERROR})
+			panic(exitState.ExitState{
+				Reason: errors.New(errorColor.ApplyFore(
+					"Error reading validator config in '%s': %v\n",
+					prog.Args.ValidatorConfigFile, e)),
+				Code: exitState.PROGRAM_ERROR,
+			})
 		}
 		e = messageValidator.UnmarshalYAML(data)
 		if e != nil {
-			panic(exitState{
-				Reason: fmt.Errorf(
+			panic(exitState.ExitState{
+				Reason: errors.New(errorColor.ApplyFore(
 					"Error unmarshaling validator config in '%s': %v\n",
-					prog.args.ValidatorConfigFile, e),
-				Code: PROGRAM_ERROR})
+					prog.Args.ValidatorConfigFile, e)),
+				Code: exitState.PROGRAM_ERROR})
 		}
 		return messageValidator
 	}

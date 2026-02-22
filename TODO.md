@@ -52,7 +52,6 @@ anyway. The part is also difficult to do in a clean way, though, because
 the validation happens at different levels. It should be possible to
 keep adding info at different levels to the errors, though, using fmt.Errorf.
 
-
 # ? Add use of colors in console
 
 # ? Save errors as per-line and print them out next to the line of text
@@ -100,4 +99,12 @@ specifically for ending the header "sentence", whereas it might be
 sensible to allow the use of periods as they are used when referring
 to a method, for example: "Add ClassName.methodName tests" or something
 like that. Then again, it might be better to just write it differently,
-like "Add tests for \<X\>". 
+like "Add tests for \<X\>".
+
+# Move as much to /internal as sensible
+
+Stuff like the countingScanner shouldn't really exist outside the internal
+package, as that's not really something that's necessarily supposed to
+be used by anyone else?
+
+# Use env variables, global config

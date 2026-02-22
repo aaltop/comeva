@@ -13,7 +13,7 @@ func FixtureConfig() (config *Config) {
 func TestUnmarshalValidatorConfigFile(t *testing.T) {
 	var config = NewDefaultConfig()
 
-	if config.ValidatorConfigFile != "" {
+	if config.ValidatorConfigFile != nil {
 		t.Errorf("Expected empty default config file value, got %v", config.ValidatorConfigFile)
 	}
 
@@ -27,8 +27,8 @@ validatorConfigFile: %s`
 		t.Errorf("Valid config file was found to be invalid: %v\n", e)
 	}
 
-	if config.ValidatorConfigFile != validatorConfigFile {
-		t.Errorf("validator config file did not match,\nExpected:\n%s\nReceived:\n%s\n", validatorConfigFile, config.ValidatorConfigFile)
+	if *config.ValidatorConfigFile != validatorConfigFile {
+		t.Errorf("validator config file did not match,\nExpected:\n%s\nReceived:\n%s\n", validatorConfigFile, *config.ValidatorConfigFile)
 	}
 }
 
@@ -36,7 +36,7 @@ validatorConfigFile: %s`
 func TestUnmarshalCommitFile(t *testing.T) {
 	var config = NewDefaultConfig()
 
-	if config.CommitFile != "" {
+	if config.CommitFile != nil {
 		t.Errorf("Expected empty default commit file value, got %v", config.CommitFile)
 	}
 
@@ -50,17 +50,17 @@ commitFile: %s`
 		t.Errorf("Valid config file was found to be invalid: %v\n", e)
 	}
 
-	if config.CommitFile != commitFile {
-		t.Errorf("validator commit file did not match,\nExpected:\n%s\nReceived:\n%s\n", commitFile, config.CommitFile)
+	if *config.CommitFile != commitFile {
+		t.Errorf("validator commit file did not match,\nExpected:\n%s\nReceived:\n%s\n", commitFile, *config.CommitFile)
 	}
 }
 
-// Commit file can be unmarshaled from YAML content.
+// Verbosity can be unmarshaled from YAML content.
 func TestUnmarshalVerbosity(t *testing.T) {
 	var config = NewDefaultConfig()
 
-	if config.Verbosity != 0 {
-		t.Errorf("Expected zero default verbosity value, got %v", config.CommitFile)
+	if config.Verbosity != nil {
+		t.Errorf("Expected empty default verbosity value, got %v", config.CommitFile)
 	}
 
 	var verbosity = 11
@@ -73,7 +73,7 @@ verbosity: %d`
 		t.Errorf("Valid config file was found to be invalid: %v\n", e)
 	}
 
-	if config.Verbosity != verbosity {
+	if *config.Verbosity != verbosity {
 		t.Errorf("validator verbosity did not match,\nExpected:\n%d\nReceived:\n%d\n", verbosity, config.Verbosity)
 	}
 }

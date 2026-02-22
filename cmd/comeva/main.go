@@ -1,9 +1,37 @@
 package main
 
 import (
-	"comeva/internal/comeva"
+	"comeva/internal/comeva/args"
+	"comeva/internal/comeva/commands"
+	exitstate "comeva/internal/exitState"
+	"fmt"
+	"os"
 )
 
+type program struct {
+}
+
+func (prog *program) main() (extState *exitstate.ExitState) {
+	extState = exitstate.NewDefaultExitState()
+
+	defer func() {
+		var panicValue any = recover()
+		extState.HandlePanic(panicValue)
+	}()
+
+	var cmdArgs *args.CommandArgs = args.ParseCommandArgs(os.Args[1:])
+	var base, _ = commands.NewBaseCommand()
+	var sub *commands.Command = base.GetSubCommand(cmdArgs.Commands)
+	if sub != nil {
+		extState = sub.Execute(cmdArgs)
+	} else {
+		fmt.Println(base.HelpMessage.String())
+	}
+	return
+}
+
 func main() {
-	comeva.Main()
+	var p = program{}
+	var state = p.main()
+	state.Exit()
 }
