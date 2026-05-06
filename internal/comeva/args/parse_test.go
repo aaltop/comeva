@@ -8,7 +8,7 @@ import (
 	stringUtils "comeva/utils/strings"
 )
 
-var globalFlag = "--help --verbosity 1"
+var globalFlag = "--help --verbosity 1 --config-file config.yaml"
 var commandsString = "command1 command2"
 var subFlag = `--subFlag1 123 --subFlag2 "some flag value"`
 
@@ -20,8 +20,9 @@ func TestParse(t *testing.T) {
 	var cmdArgs *CommandArgs = ParseCommandArgs(args)
 
 	var expectedGlobalFlags = &GlobalFlags{
-		Help:      true,
-		Verbosity: 1,
+		Help:       true,
+		Verbosity:  1,
+		ConfigFile: "config.yaml",
 	}
 
 	var receivedGlobalFlags = cmdArgs.GlobalFlags

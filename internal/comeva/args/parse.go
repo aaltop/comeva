@@ -4,6 +4,7 @@ import (
 	"flag"
 	"strings"
 
+	"comeva/internal/comeva/globals"
 	flagUtils "comeva/utils/flag"
 )
 
@@ -13,27 +14,34 @@ type flagString string
 
 // // GlobalFlagNames holds the string name of each global command line flag.
 var GlobalFlagNames = struct {
-	Help, Verbosity flagString
+	Help, Verbosity, ConfigFile flagString
 }{
-	Help:      "help",
-	Verbosity: "verbosity",
+	Help:       "help",
+	Verbosity:  "verbosity",
+	ConfigFile: "config-file",
 }
 
 var globalFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
 
 var helpFlag = globalFlagSet.Bool(string(GlobalFlagNames.Help), false, "print help")
 
-const verbosityDefault int = 0
+const verbosityDefault int = globals.VERBOSITY_DEFAULT
 
 var verbosity = globalFlagSet.Int(
 	string(GlobalFlagNames.Verbosity), verbosityDefault,
 	"program verbosity, lower means less verbose, higher more verbose")
+
+var configFile = globalFlagSet.String(
+	string(GlobalFlagNames.ConfigFile), "./.comeva/config.yaml",
+	"File path for configuration file for setting command line values. Any values given on the command line take precedence.")
 
 type GlobalFlags struct {
 	// Help reports whether a help flag was passed.
 	Help bool
 	// Verbosity indicates the level of verbosity of the program.
 	Verbosity int
+	// ConfigFile is the file path for a configuration file for setting command line values.
+	ConfigFile string
 }
 
 func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
@@ -53,6 +61,7 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[strin
 	gFlags = NewDefaultGlobalFlags()
 	gFlags.Help = *helpFlag
 	gFlags.Verbosity = *verbosity
+	gFlags.ConfigFile = *configFile
 
 	return gFlags, passedFlags, globalFlagSet.Args()
 }

@@ -3,10 +3,12 @@
 package config
 
 import (
-	"github.com/goccy/go-yaml"
-)
+	"comeva/internal/comeva/globals"
 
-const BASE_PATH string = "./.comeva/"
+	"comeva/internal/yaml"
+
+	goccyYaml "github.com/goccy/go-yaml"
+)
 
 // Config describes configuration parameters for the program.
 type Config struct {
@@ -28,9 +30,9 @@ func NewDefaultConfig() (config *Config) {
 func NewConfigWithDefaults() (config *Config) {
 	var e error
 	config, e = NewConfig(
-		BASE_PATH+"validator.yaml",
-		BASE_PATH+"git_commit.txt",
-		0)
+		globals.CONFIG_BASE_PATH+"validator.yaml",
+		"./git_commit.txt",
+		globals.VERBOSITY_DEFAULT)
 	if e != nil {
 		panic(e)
 	}
@@ -55,10 +57,16 @@ type configYaml struct {
 
 func (config *Config) UnmarshalYAML(data []byte) (e error) {
 	var temp configYaml
-	if e = yaml.Unmarshal(data, &temp); e == nil {
+	if e = goccyYaml.Unmarshal(data, &temp); e == nil {
 		config.CommitFile = temp.CommitFile
 		config.ValidatorConfigFile = temp.ValidatorConfigFile
 		config.Verbosity = temp.Verbosity
 	}
+	return
+}
+
+// UnmarshalYAMLFile unmarshals the [Config] from the file.
+func (config *Config) UnmarshalYAMLFile(filename string) (e error) {
+	e = yaml.UnMarshalFromFile(filename, config)
 	return
 }

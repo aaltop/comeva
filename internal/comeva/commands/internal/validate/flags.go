@@ -2,6 +2,7 @@ package validate
 
 import (
 	"comeva/internal/comeva/config"
+	"comeva/internal/comeva/globals"
 	"flag"
 )
 
@@ -11,19 +12,14 @@ type FlagString string
 
 // flagNames holds the string name of each command line flag.
 var flagNames = struct {
-	ConfigFile, ValidatorConfigFile,
+	ValidatorConfigFile,
 	CommitFile FlagString
 }{
-	ConfigFile:          "config-file",
 	ValidatorConfigFile: "validator-config-file",
 	CommitFile:          "commit-file",
 }
-
-var configFile = FlagSet.String(
-	string(flagNames.ConfigFile), "./.comeva/config.yaml",
-	"File path for configuration file for setting command line values. Any values given on the command line take precedence.")
 var validatorConfigFile = FlagSet.String(
-	string(flagNames.ValidatorConfigFile), "./.comeva/validator_config.yaml",
+	string(flagNames.ValidatorConfigFile), globals.CONFIG_BASE_PATH+"validator.yaml",
 	"file path for configuration of validators")
 var commitFile = FlagSet.String(string(flagNames.CommitFile), "./git_commit.txt", "file path for commit file")
 
@@ -35,7 +31,6 @@ type args struct {
 func NewArgs() (arg *args, e error) {
 	arg = &args{}
 
-	arg.ConfigFile = *configFile
 	arg.ValidatorConfigFile = *validatorConfigFile
 	arg.CommitFile = *commitFile
 

@@ -5,10 +5,15 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"comeva/internal/comeva/args"
+	"comeva/internal/comeva/config"
+	"comeva/internal/comeva/globals"
+	"comeva/internal/comeva/io/ansi"
 	exitstate "comeva/internal/exitState"
+	"comeva/internal/yaml"
 	ioUtils "comeva/utils/io"
 )
 
@@ -158,7 +163,7 @@ Options:
 `, msg.synopsis, msg.description, msg.usage, msg.options)
 }
 
-type CommandFunc func(gFlags *args.GlobalFlags, passedGFlags map[string]bool) (extState *exitstate.ExitState)
+type CommandFunc func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState)
 type CommandList map[string]*Command
 
 // Command represents a command line command.
@@ -180,7 +185,9 @@ type Command struct {
 
 func NewDefaultCommand() (com *Command) {
 	com = &Command{}
-	com.function = func(gFlags *args.GlobalFlags, passedGFlags map[string]bool) (e *exitstate.ExitState) { return }
+	com.function = func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (e *exitstate.ExitState) {
+		return
+	}
 	com.subCommands = make(CommandList)
 
 	return
@@ -204,6 +211,9 @@ func NewCommand(
 
 func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.ExitState) {
 	extState = exitstate.NewDefaultExitState()
+	var e error
+
+	var colorSchemes = ansi.BasicColorSchemes
 
 	if com.CommandFlags != nil {
 		com.CommandFlags.Parse(cmdArgs.Flags)
@@ -214,7 +224,15 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 		return
 	}
 
-	return com.function(cmdArgs.GlobalFlags, cmdArgs.PassedGlobalFlags)
+	var conf = config.NewDefaultConfig()
+	if cmdArgs.GlobalFlags.ConfigFile != "" {
+		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
+		if e != nil && cmdArgs.GlobalFlags.Verbosity >= globals.VERBOSITY_WARNING {
+			fmt.Fprint(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: error reading config file: %v", e))
+		}
+	}
+
+	return com.function(cmdArgs.GlobalFlags, cmdArgs.PassedGlobalFlags, conf)
 }
 
 // GetSubCommand returns a subcommand of this command and further

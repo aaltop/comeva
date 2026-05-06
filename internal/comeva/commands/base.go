@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"comeva/internal/comeva/args"
+	"comeva/internal/comeva/config"
 	exitstate "comeva/internal/exitState"
 )
 
@@ -45,7 +46,7 @@ func NewBaseCommand() (baseCommand *Command, e error) {
 
 	baseCommand, _ = NewCommand(
 		*hlpMsg,
-		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool) (extState *exitstate.ExitState) {
+		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 			extState = exitstate.NewDefaultExitState()
 			fmt.Println(hlpMsg.String())
 			return

@@ -8,11 +8,9 @@ import (
 	io "comeva/internal/comeva/io"
 	"comeva/internal/comeva/io/ansi"
 	exitstate "comeva/internal/exitState"
-	"comeva/internal/yaml"
 	"comeva/utils/flag"
 	"errors"
 	"fmt"
-	"os"
 )
 
 // program acts as the state of the command.
@@ -20,7 +18,7 @@ type program struct {
 	Args *args
 }
 
-func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool) (extState *exitstate.ExitState) {
+func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 	var colorSchemes = ansi.BasicColorSchemes
 
 	extState = exitstate.NewDefaultExitState()
@@ -32,21 +30,11 @@ func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool) (extState
 	// SORT OUT FLAGS
 	// ---------------------------------------------------
 
-	var conf = config.NewDefaultConfig()
 	// verbosity contains either the verbosity as passed as a flag, or the value
 	// from the config file (or the default value if neither is passed).
 	var verbosity int = gFlags.Verbosity
-	if arg.ConfigFile != "" {
-		e = yaml.UnMarshalFromFile(arg.ConfigFile, conf)
-		if e == nil {
-			if conf.Verbosity != nil && !passedFlags[string(argus.GlobalFlagNames.Verbosity)] {
-				verbosity = max(verbosity, *conf.Verbosity)
-			}
-		} else {
-			if verbosity > 9 {
-				fmt.Fprint(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: error reading config file: %v", e))
-			}
-		}
+	if conf.Verbosity != nil && !passedFlags[string(argus.GlobalFlagNames.Verbosity)] {
+		verbosity = *conf.Verbosity
 	}
 
 	if !passedFlags[string(flagNames.CommitFile)] && conf.CommitFile != nil {

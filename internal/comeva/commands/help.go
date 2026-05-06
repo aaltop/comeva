@@ -2,6 +2,7 @@ package commands
 
 import (
 	"comeva/internal/comeva/args"
+	"comeva/internal/comeva/config"
 	exitstate "comeva/internal/exitState"
 	"fmt"
 )
@@ -28,7 +29,7 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 	}
 	helpCommand, e = NewCommand(
 		*helpMsg,
-		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool) (extState *exitstate.ExitState) {
+		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 			extState = exitstate.NewDefaultExitState()
 			fmt.Println(helpMsg.String())
 			return
