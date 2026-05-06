@@ -1,10 +1,13 @@
 package args
 
 import (
+	"errors"
 	"flag"
 	"strings"
 
 	"comeva/internal/comeva/globals"
+	"comeva/internal/comeva/io/ansi"
+	exitstate "comeva/internal/exitState"
 	flagUtils "comeva/utils/flag"
 )
 
@@ -32,7 +35,7 @@ var verbosity = globalFlagSet.Int(
 	"program verbosity, lower means less verbose, higher more verbose")
 
 var configFile = globalFlagSet.String(
-	string(GlobalFlagNames.ConfigFile), "./.comeva/config.yaml",
+	string(GlobalFlagNames.ConfigFile), globals.CONFIG_BASE_PATH+"config.yaml",
 	"File path for configuration file for setting command line values. Any values given on the command line take precedence.")
 
 type GlobalFlags struct {
@@ -54,7 +57,18 @@ func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
 // should be the command line arguments excluding the program name.
 func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[string]bool, remainingArgs []string) {
 	globalFlagSet.Usage = func() {}
-	globalFlagSet.Parse(args)
+	var e error
+
+	var colorSchemes = ansi.BasicColorSchemes
+
+	e = globalFlagSet.Parse(args)
+
+	if e != nil {
+		exitstate.NewExitState(
+			errors.New(colorSchemes.Error.ApplyFore("Error parsing global flags: %v", e)),
+			exitstate.PROGRAM_ERROR,
+		).Panic()
+	}
 
 	passedFlags = flagUtils.PassedFlags(globalFlagSet)
 

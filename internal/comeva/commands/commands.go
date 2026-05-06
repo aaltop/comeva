@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -163,7 +164,7 @@ Options:
 `, msg.synopsis, msg.description, msg.usage, msg.options)
 }
 
-type CommandFunc func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState)
+type CommandFunc func(gFlags *args.GlobalFlags, passedGLobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState)
 type CommandList map[string]*Command
 
 // Command represents a command line command.
@@ -216,7 +217,12 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	var colorSchemes = ansi.BasicColorSchemes
 
 	if com.CommandFlags != nil {
-		com.CommandFlags.Parse(cmdArgs.Flags)
+		e = com.CommandFlags.Parse(cmdArgs.Flags)
+		if e != nil {
+			extState.Code = exitstate.PROGRAM_ERROR
+			extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error parsing flags: %v", e))
+			return
+		}
 	}
 
 	if cmdArgs.GlobalFlags.Help {

@@ -5,6 +5,7 @@ package validate
 import (
 	argus "comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
+	"comeva/internal/comeva/globals"
 	io "comeva/internal/comeva/io"
 	"comeva/internal/comeva/io/ansi"
 	exitstate "comeva/internal/exitState"
@@ -18,14 +19,14 @@ type program struct {
 	Args *args
 }
 
-func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
+func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 	var colorSchemes = ansi.BasicColorSchemes
 
 	extState = exitstate.NewDefaultExitState()
 	var e error
 	var arg *args
 	arg, e = NewArgs()
-	var passedFlags map[string]bool = flag.PassedFlags(FlagSet)
+	var passedLocalFlags map[string]bool = flag.PassedFlags(FlagSet)
 
 	// SORT OUT FLAGS
 	// ---------------------------------------------------
@@ -33,15 +34,15 @@ func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool, conf *con
 	// verbosity contains either the verbosity as passed as a flag, or the value
 	// from the config file (or the default value if neither is passed).
 	var verbosity int = gFlags.Verbosity
-	if conf.Verbosity != nil && !passedFlags[string(argus.GlobalFlagNames.Verbosity)] {
+	if conf.Verbosity != nil && !passedGlobalFlags[string(argus.GlobalFlagNames.Verbosity)] {
 		verbosity = *conf.Verbosity
 	}
 
-	if !passedFlags[string(flagNames.CommitFile)] && conf.CommitFile != nil {
+	if !passedLocalFlags[string(flagNames.CommitFile)] && conf.CommitFile != nil {
 		arg.CommitFile = *conf.CommitFile
 	}
 
-	if !passedFlags[string(flagNames.ValidatorConfigFile)] && conf.ValidatorConfigFile != nil {
+	if !passedLocalFlags[string(flagNames.ValidatorConfigFile)] && conf.ValidatorConfigFile != nil {
 		arg.ValidatorConfigFile = *conf.ValidatorConfigFile
 	}
 
@@ -63,7 +64,7 @@ func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool, conf *con
 		return
 	}
 
-	if verbosity > 0 {
+	if verbosity > globals.VERBOSITY_DEFAULT {
 		io.PrintCommitMessage(commitMessage)
 	}
 	e = prog.validateCommitMessage(commitMessage)
@@ -88,6 +89,8 @@ func Function(gFlags *argus.GlobalFlags, passedGFlags map[string]bool, conf *con
 		}
 		extState.Code = exitstate.VALIDATION_ERROR
 		return
+	} else {
+		fmt.Println("No problems found.")
 	}
 
 	// VALIDATE MESSAGE

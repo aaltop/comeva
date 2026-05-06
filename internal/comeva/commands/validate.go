@@ -7,7 +7,7 @@ import (
 	flagUtils "comeva/utils/flag"
 )
 
-// NewValidateCommand returns a command that represents the validator command.
+// NewValidateCommand returns a [Command] that represents the validator command.
 func NewValidateCommand() (com *Command, e error) {
 
 	var usage = HelpMessageUsage{}

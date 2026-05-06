@@ -36,6 +36,19 @@ func NewDefaultExitState() (extState *ExitState) {
 	return &ExitState{}
 }
 
+func NewExitState(reason error, code exitCode) (extState *ExitState) {
+	extState = NewDefaultExitState()
+	extState.Reason = reason
+	extState.Code = code
+	return
+}
+
+// Panic panics as the [ExitState] such that [ExitState.HandlePanic] is able to correctly
+// handle it.
+func (extState *ExitState) Panic() {
+	panic(*extState)
+}
+
 // Exit exits the program with the given [exitCode], printing first the given
 // Reason for exiting, if any.
 func (extState *ExitState) Exit() {
