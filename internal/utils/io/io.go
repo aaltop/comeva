@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// StringScanner creates a default [bufio.NewScanner] based on the passed
+// stringScanner creates a default [bufio.NewScanner] based on the passed
 // string.
 func stringScanner(str string) (scanner *bufio.Scanner) {
 	return bufio.NewScanner(strings.NewReader(str))

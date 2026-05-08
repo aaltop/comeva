@@ -1,7 +1,7 @@
 package body
 
 import (
-	"comeva/utils"
+	"comeva/internal/utils"
 	"comeva/validators"
 	"fmt"
 	"strings"

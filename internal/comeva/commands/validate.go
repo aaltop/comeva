@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	validate "comeva/internal/comeva/commands/internal/validate"
-	flagUtils "comeva/utils/flag"
+	flagUtils "comeva/internal/utils/flag"
 )
 
 // NewValidateCommand returns a [Command] that represents the validator command.

@@ -2,7 +2,7 @@ package trailer
 
 import (
 	"bufio"
-	"comeva/utils"
+	"comeva/internal/utils"
 	"comeva/validators"
 	"errors"
 	"fmt"

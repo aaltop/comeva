@@ -1,7 +1,7 @@
 package validators
 
 import (
-	"comeva/utils"
+	"comeva/internal/utils"
 	"fmt"
 )
 

@@ -14,8 +14,8 @@ import (
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+	ioUtils "comeva/internal/utils/io"
 	"comeva/internal/yaml"
-	ioUtils "comeva/utils/io"
 )
 
 // UsageExample describes a single usage example of a help message.

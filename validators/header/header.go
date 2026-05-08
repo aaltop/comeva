@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"comeva/utils"
+	"comeva/internal/utils"
 	"comeva/validators"
 )
 

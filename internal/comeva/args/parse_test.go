@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	testingHelpers "comeva/internal/testing"
-	stringUtils "comeva/utils/strings"
+	stringUtils "comeva/internal/utils/strings"
 )
 
 var globalFlag = "--help --verbosity 1 --config-file config.yaml"

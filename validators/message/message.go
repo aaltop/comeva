@@ -2,7 +2,7 @@ package message
 
 import (
 	"bufio"
-	"comeva/utils"
+	"comeva/internal/utils"
 	"comeva/validators"
 	"comeva/validators/body"
 	"comeva/validators/header"

@@ -10,7 +10,7 @@ import (
 	exitstate "comeva/internal/exitState"
 	io "comeva/internal/io"
 	"comeva/internal/io/ansi"
-	"comeva/utils/flag"
+	"comeva/internal/utils/flag"
 	"errors"
 	"fmt"
 )
