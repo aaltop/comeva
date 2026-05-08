@@ -1,5 +1,4 @@
 // Ansi colour code handling.
-
 package ansi
 
 import (
@@ -13,7 +12,7 @@ const CSI = "\x1b["
 // (SGR) sequence.
 const SGRReset = "\x1b[m"
 
-// TODO: replace with [color.RGBA]
+// TODO: Could utilise the std image/color package here?
 
 // RGBColor represents an rgb colour.
 type RGBColor struct {
