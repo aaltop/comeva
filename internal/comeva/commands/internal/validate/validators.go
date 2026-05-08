@@ -16,42 +16,15 @@ import (
 )
 
 func getHeaderValidator() (headerValidator *headerValidation.HeaderValidator) {
-
-	var e error
-	headerValidator, e = headerValidation.NewHeaderValidator(
-		[]string{"feat", "fix"},
-		[]string{"main", "validators"},
-		[]string{"Add", "Change", "Remove", "Update", "Fix"},
-		[2]uint{0, 80})
-	if e != nil {
-		panic(fmt.Sprintf("HeaderValidator should be valid, got error: %v", e))
-	}
-	return headerValidator
+	return headerValidation.NewHeaderValidatorWithDefaults()
 }
 
 func getBodyValidator() (bodyValidator *bodyValidation.BodyValidator) {
-	var e error
-	bodyValidator, e = bodyValidation.NewBodyValidator([2]uint{0, 80})
-	if e != nil {
-		panic(fmt.Sprintf("BodyValidator should be valid, got error: %v", e))
-	}
-	return bodyValidator
+	return bodyValidation.NewBodyValidatorWithDefaults()
 }
 
 func getTrailerValidator() (trailerValidator *trailerValidation.TrailerValidator) {
-	var e error
-	var requiredKeys trailerValidation.KeyMap
-	var optionalKeys trailerValidation.KeyMap
-	trailerValidator, e = trailerValidation.NewTrailerValidator(
-		requiredKeys,
-		optionalKeys,
-		2,
-		[2]uint{0, 80},
-	)
-	if e != nil {
-		panic(fmt.Sprintf("TrailerValidator should be valid, got error: %v", e))
-	}
-	return trailerValidator
+	return trailerValidation.NewTrailerValidatorWithDefaults()
 }
 
 func (prog *program) getMessageValidator() (messageValidator *messageValidation.MessageValidator) {
@@ -71,7 +44,7 @@ be ignored and the defaults used instead`)
 		if e != nil {
 			panic(exitState.ExitState{
 				Reason: errors.New(errorColor.ApplyFore(
-					"Error reading validator config in '%s': %v\n",
+					"Error reading validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR,
 			})
@@ -80,7 +53,7 @@ be ignored and the defaults used instead`)
 		if e != nil {
 			panic(exitState.ExitState{
 				Reason: errors.New(errorColor.ApplyFore(
-					"Error unmarshaling validator config in '%s': %v\n",
+					"Error unmarshaling validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR})
 		}

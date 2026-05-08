@@ -1,6 +1,7 @@
 package config
 
 import (
+	testingHelpers "comeva/internal/comeva/testing"
 	"fmt"
 	"testing"
 )
@@ -75,5 +76,44 @@ verbosity: %d`
 
 	if *config.Verbosity != verbosity {
 		t.Errorf("validator verbosity did not match,\nExpected:\n%d\nReceived:\n%d\n", verbosity, config.Verbosity)
+	}
+}
+
+func TestEqual(t *testing.T) {
+	var conf, equal = FixtureConfig(), FixtureConfig()
+	var notEqual, e = NewConfig("notliekly", "meniether", -999)
+	if e != nil {
+		t.Fatalf("Unexpected error: %v\n", e)
+	}
+
+	if !conf.Equal(equal) {
+		t.Errorf("Equal Configs found to be inequal: %v\n%v", conf, equal)
+	}
+
+	if conf.Equal(notEqual) {
+		t.Errorf("Inequal Configs found to be equal: %v\n%v", conf, notEqual)
+	}
+}
+
+// Content can be marshaled and unmarshaled into the same state.
+func TestMarshalUnmarshal(t *testing.T) {
+	var config, e = NewConfig("valida", "commi", 123)
+	if e != nil {
+		t.Fatalf("Unexpected error: %v\n", e)
+	}
+
+	var data []byte
+	data, e = config.MarshalYAML()
+	if e != nil {
+		t.Fatalf("Unexpected error: %v\n", e)
+	}
+	var newConfig = NewDefaultConfig()
+	e = newConfig.UnmarshalYAML(data)
+	if e != nil {
+		t.Fatalf("Unexpected error: %v\n", e)
+	}
+
+	if !config.Equal(newConfig) {
+		t.Error(testingHelpers.ValueMismatch("Config", *config, *newConfig))
 	}
 }

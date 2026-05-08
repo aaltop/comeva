@@ -4,6 +4,7 @@ package config
 
 import (
 	"comeva/internal/comeva/globals"
+	"comeva/internal/equal"
 
 	"comeva/internal/yaml"
 
@@ -49,6 +50,17 @@ func NewConfig(
 	return
 }
 
+// Equal reports whether the two Configs are equal.
+func (config *Config) Equal(other *Config) bool {
+	if config == nil || other == nil {
+		return config == other
+	}
+
+	return equal.NilEqual(config.ValidatorConfigFile, other.ValidatorConfigFile) &&
+		equal.NilEqual(config.CommitFile, other.CommitFile) &&
+		equal.NilEqual(config.Verbosity, other.Verbosity)
+}
+
 type configYaml struct {
 	ValidatorConfigFile *string `yaml:"validatorConfigFile"`
 	CommitFile          *string `yaml:"commitFile"`
@@ -63,6 +75,15 @@ func (config *Config) UnmarshalYAML(data []byte) (e error) {
 		config.Verbosity = temp.Verbosity
 	}
 	return
+}
+
+func (config *Config) MarshalYAML() (data []byte, e error) {
+	var temp configYaml
+	temp.CommitFile = config.CommitFile
+	temp.ValidatorConfigFile = config.ValidatorConfigFile
+	temp.Verbosity = config.Verbosity
+
+	return goccyYaml.Marshal(&temp)
 }
 
 // UnmarshalYAMLFile unmarshals the [Config] from the file.

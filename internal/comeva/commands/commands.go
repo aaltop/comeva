@@ -220,7 +220,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 		e = com.CommandFlags.Parse(cmdArgs.Flags)
 		if e != nil {
 			extState.Code = exitstate.PROGRAM_ERROR
-			extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error parsing flags: %v", e))
+			extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error parsing flags: %v\n", e))
 			return
 		}
 	}
@@ -234,7 +234,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	if cmdArgs.GlobalFlags.ConfigFile != "" {
 		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
 		if e != nil && cmdArgs.GlobalFlags.Verbosity >= globals.VERBOSITY_WARNING {
-			fmt.Fprint(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: error reading config file: %v", e))
+			fmt.Fprint(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: error reading config file: %v\n", e))
 		}
 	}
 

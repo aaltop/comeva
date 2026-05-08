@@ -3,6 +3,7 @@ package main
 import (
 	"comeva/internal/comeva/args"
 	"comeva/internal/comeva/commands"
+	"comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
 	"fmt"
 	"os"
@@ -20,7 +21,7 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 	}()
 
 	var cmdArgs *args.CommandArgs = args.ParseCommandArgs(os.Args[1:])
-	var base, _ = commands.NewBaseCommand()
+	var base = errors.Panic2(commands.NewBaseCommand())
 	var sub *commands.Command = base.GetSubCommand(cmdArgs.Commands)
 	if sub != nil {
 		extState = sub.Execute(cmdArgs)

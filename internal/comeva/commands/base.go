@@ -5,46 +5,42 @@ import (
 
 	"comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
+	"comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
 )
 
-// NewBaseCommand returns a [command] that represents the base command
+// NewBaseCommand returns a [Command] that represents the base command
 // of the program.
 func NewBaseCommand() (baseCommand *Command, e error) {
 
+	defer func() {
+		e = errors.HandleReturn(recover())
+	}()
+
 	var hlpMsgUsg = &HelpMessageUsage{}
 
-	hlpMsgUsg.AddExample(
-		CommandNames.Help,
-		"Get help on an item.",
-	)
-	hlpMsgUsg.AddExample(
-		CommandNames.Validate,
-		"Validate a git commit message.",
-	)
-
 	var subCommands CommandList = make(CommandList)
-	subCommands[CommandNames.Help], e = NewHelpCommand()
-	subCommands[CommandNames.Validate], e = NewValidateCommand()
+	subCommands[CommandNames.Help] = errors.Return2(NewHelpCommand())
+	subCommands[CommandNames.Validate] = errors.Return2(NewValidateCommand())
+	subCommands[CommandNames.Init] = errors.Return2(NewInitCommand())
 
-	if e != nil {
-		return
+	for k, v := range subCommands {
+		hlpMsgUsg.AddExample(
+			k,
+			v.HelpMessage.synopsis,
+		)
 	}
 
 	var options = newDefaultFlagOptions()
 	var hlpMsg *HelpMessage
-	hlpMsg, e = NewHelpMessage(
+	hlpMsg = errors.Return2(NewHelpMessage(
 		"CoMeVa (Commit Message Validator) is a tool for validating structured git commit messages.",
 		"",
 		*hlpMsgUsg,
 		options,
-	)
+	))
 
-	if e != nil {
-		return
-	}
-
-	baseCommand, _ = NewCommand(
+	baseCommand = errors.Return2(NewCommand(
 		*hlpMsg,
 		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 			extState = exitstate.NewDefaultExitState()
@@ -52,6 +48,6 @@ func NewBaseCommand() (baseCommand *Command, e error) {
 			return
 		},
 		subCommands,
-	)
+	))
 	return
 }
