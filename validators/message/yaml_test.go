@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	testingUtils "comeva/internal/comeva/testing"
+	testingUtils "comeva/internal/testing"
 )
 
 func errorMsgFmt(expected, received any) string {

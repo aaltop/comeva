@@ -1,7 +1,7 @@
 package config
 
 import (
-	testingHelpers "comeva/internal/comeva/testing"
+	testingHelpers "comeva/internal/testing"
 	"fmt"
 	"testing"
 )

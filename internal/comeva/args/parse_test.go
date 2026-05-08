@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	testingHelpers "comeva/internal/comeva/testing"
+	testingHelpers "comeva/internal/testing"
 	stringUtils "comeva/utils/strings"
 )
 

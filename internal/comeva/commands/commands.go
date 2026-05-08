@@ -12,8 +12,8 @@ import (
 	"comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
-	"comeva/internal/comeva/io/ansi"
 	exitstate "comeva/internal/exitState"
+	"comeva/internal/io/ansi"
 	"comeva/internal/yaml"
 	ioUtils "comeva/utils/io"
 )

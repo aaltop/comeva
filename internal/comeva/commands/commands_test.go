@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	testingHelpers "comeva/internal/comeva/testing"
+	testingHelpers "comeva/internal/testing"
 )
 
 // Getting the subcommands of commands works.

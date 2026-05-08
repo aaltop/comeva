@@ -1,7 +1,7 @@
 package header
 
 import (
-	testingUtils "comeva/internal/comeva/testing"
+	testingUtils "comeva/internal/testing"
 	"fmt"
 	"slices"
 	"strings"

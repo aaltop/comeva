@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"comeva/internal/comeva/io/ansi"
 	exitState "comeva/internal/exitState"
+	"comeva/internal/io/ansi"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"

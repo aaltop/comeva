@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"comeva/internal/comeva/globals"
-	"comeva/internal/comeva/io/ansi"
 	exitstate "comeva/internal/exitState"
+	"comeva/internal/io/ansi"
 	flagUtils "comeva/utils/flag"
 )
 

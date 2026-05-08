@@ -6,9 +6,10 @@ import (
 	argus "comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
-	io "comeva/internal/comeva/io"
-	"comeva/internal/comeva/io/ansi"
+	comevaIo "comeva/internal/comeva/io"
 	exitstate "comeva/internal/exitState"
+	io "comeva/internal/io"
+	"comeva/internal/io/ansi"
 	"comeva/utils/flag"
 	"errors"
 	"fmt"
@@ -65,7 +66,7 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 	}
 
 	if verbosity > globals.VERBOSITY_DEFAULT {
-		io.PrintCommitMessage(commitMessage)
+		comevaIo.PrintCommitMessage(commitMessage)
 	}
 	e = prog.validateCommitMessage(commitMessage)
 	if e != nil {
