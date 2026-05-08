@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	testingUtils "comeva/internal/comeva/testing"
 )
 
 func errorMsgFmt(expected, received any) string {
@@ -84,5 +86,27 @@ trailer:
 
 	if !expected.Equal(received) {
 		t.Error(errorMsgFmt(*expected, received))
+	}
+}
+
+// Content can be marshaled and unmarshaled into the same format.
+func TestMarshalUnmarshal(t *testing.T) {
+	var e error
+
+	var expected = NewMessageValidatorWithDefaults()
+
+	var data []byte
+	data, e = expected.MarshalYAML()
+	if e != nil {
+		t.Fatalf("Unexpected error: %v", e)
+	}
+
+	var received = NewDefaultMessageValidator()
+	received.UnmarshalYAML(data)
+
+	if !expected.Equal(received) {
+		t.Log(string(data))
+		t.Logf("%v, %v", expected.HeaderValidator, received.HeaderValidator)
+		t.Error(testingUtils.ValueMismatch("MessageValidator", *expected, *received))
 	}
 }

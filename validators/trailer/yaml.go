@@ -34,3 +34,20 @@ func (validator *TrailerValidator) UnmarshalYAML(data []byte) (e error) {
 	}
 	return e
 }
+
+func (validator *TrailerValidator) MarshalYAML() (data []byte, e error) {
+	var temp trailerValidator
+
+	for _, v := range validator.requiredKeys {
+		temp.RequiredKeys = append(temp.RequiredKeys, v)
+	}
+
+	for _, v := range validator.optionalKeys {
+		temp.OptionalKeys = append(temp.OptionalKeys, v)
+	}
+
+	temp.ContinuationIndent = validator.continuationIndent
+	temp.LineLength = [2]uint{validator.lineLength.Lower, validator.lineLength.Upper}
+
+	return yaml.Marshal(&temp)
+}

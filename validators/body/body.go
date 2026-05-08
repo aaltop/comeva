@@ -42,6 +42,25 @@ func NewBodyValidator(lineLength [2]uint) (validator *BodyValidator, e error) {
 	return &BodyValidator{lineLength: bounds}, e
 }
 
+// NewBodyValidatorWithDefaults returns a [BodyValidator] with default values.
+func NewBodyValidatorWithDefaults() (validator *BodyValidator) {
+	var e error
+	validator, e = NewBodyValidator([2]uint{0, 80})
+	if e != nil {
+		panic(e)
+	}
+	return
+}
+
+// Equal reports whether the two BodyValidators are equal.
+func (validator *BodyValidator) Equal(other *BodyValidator) bool {
+	if validator == nil || other == nil {
+		return validator == other
+	}
+
+	return validator.lineLength.Equal(other.lineLength)
+}
+
 // ValidateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
 func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error) {

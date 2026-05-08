@@ -114,14 +114,14 @@ func (validator *HeaderValidator) Reset() {
 	validator.Header = Header{}
 }
 
-// NewDefaultHeaderValidator creates the base HeaderValidator.
+// NewDefaultHeaderValidator creates the base [HeaderValidator].
 func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	h = &HeaderValidator{}
 	h.header = header
 	return
 }
 
-// NewHeaderValidator returns a new HeaderValidator.
+// NewHeaderValidator returns a new [HeaderValidator].
 // The arguments types, scopes, and verbs define acceptable values for the
 // type, scope, and verb. The lineLength argument sets minimum and maximum length.
 // If the lineLength is invalid, a non-nil error is returned.
@@ -139,6 +139,21 @@ func NewHeaderValidator(types, scopes, verbs []string, lineLength [2]uint) (h *H
 	e = h.SetLineLength(lineLength[0], lineLength[1])
 
 	return h, e
+}
+
+// NewHeaderValidatorWithDefaults returns a [HeaderValidator] with default values.
+func NewHeaderValidatorWithDefaults() (validator *HeaderValidator) {
+	var e error
+	validator, e = NewHeaderValidator(
+		[]string{"feat", "fix"},
+		[]string{},
+		[]string{"Add", "Change", "Remove", "Update", "Fix"},
+		[2]uint{0, 80},
+	)
+	if e != nil {
+		panic(e)
+	}
+	return
 }
 
 // Help returns a string that describes what the header is expected

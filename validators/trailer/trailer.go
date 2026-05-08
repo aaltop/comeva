@@ -71,33 +71,6 @@ type TrailerValidator struct {
 	Trailers []Trailer
 }
 
-// Equal reports whether the two TrailerValidators are equal.
-func (validator *TrailerValidator) Equal(other *TrailerValidator) bool {
-	if validator == nil || other == nil {
-		return validator == other
-	}
-
-	return validator.continuationRegex.String() == other.continuationRegex.String() &&
-		maps.Equal(validator.requiredKeys, other.requiredKeys) &&
-		maps.Equal(validator.optionalKeys, other.optionalKeys) &&
-		validator.continuationIndent == other.continuationIndent &&
-		validator.lineLength == other.lineLength
-}
-
-// SetLineLength sets new bounds for line length.
-func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
-	h, e := utils.NewBounds(min, max, false, false)
-	if e == nil {
-		validator.lineLength = h
-	}
-	return e
-}
-
-// Reset resets any content set during validation.
-func (validator *TrailerValidator) Reset() {
-	validator.Trailers = []Trailer{}
-}
-
 // NewDefaultTrailerValidator creates the base TrailerValidator.
 func NewDefaultTrailerValidator() (validator *TrailerValidator) {
 	validator, e := NewTrailerValidator(make(KeyMap), make(KeyMap), 2, [2]uint{0, 0})
@@ -132,6 +105,50 @@ func NewTrailerValidator(requiredKeys, optionalKeys KeyMap, continuationIndent u
 	}
 
 	return validator, e
+}
+
+// NewTrailerValidatorWithDefaults returns a [TrailerValidator] with default values.
+func NewTrailerValidatorWithDefaults() (validator *TrailerValidator) {
+	var e error
+	var requiredKeys KeyMap
+	var optionalKeys KeyMap
+	validator, e = NewTrailerValidator(
+		requiredKeys,
+		optionalKeys,
+		2,
+		[2]uint{0, 80},
+	)
+	if e != nil {
+		panic(e)
+	}
+	return
+}
+
+// Equal reports whether the two TrailerValidators are equal.
+func (validator *TrailerValidator) Equal(other *TrailerValidator) bool {
+	if validator == nil || other == nil {
+		return validator == other
+	}
+
+	return validator.continuationRegex.String() == other.continuationRegex.String() &&
+		maps.Equal(validator.requiredKeys, other.requiredKeys) &&
+		maps.Equal(validator.optionalKeys, other.optionalKeys) &&
+		validator.continuationIndent == other.continuationIndent &&
+		validator.lineLength == other.lineLength
+}
+
+// SetLineLength sets new bounds for line length.
+func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
+	h, e := utils.NewBounds(min, max, false, false)
+	if e == nil {
+		validator.lineLength = h
+	}
+	return e
+}
+
+// Reset resets any content set during validation.
+func (validator *TrailerValidator) Reset() {
+	validator.Trailers = []Trailer{}
 }
 
 // newContinuationRegex creates a new continuationRegex for TrailerValidator

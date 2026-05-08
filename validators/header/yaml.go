@@ -20,3 +20,13 @@ func (validator *HeaderValidator) UnmarshalYAML(data []byte) (e error) {
 	}
 	return e
 }
+
+func (validator *HeaderValidator) MarshalYAML() (data []byte, e error) {
+	var temp headerValidator
+	temp.Types = validator.types
+	temp.Scopes = validator.scopes
+	temp.Verbs = validator.verbs
+	temp.LineLength = [2]uint{validator.lineLength.Lower, validator.lineLength.Upper}
+
+	return yaml.Marshal(&temp)
+}

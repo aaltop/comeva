@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
+
+	testingUtils "comeva/internal/comeva/testing"
 )
 
 func errorMsgFmt(expected, received any) string {
@@ -125,5 +127,25 @@ func TestLineLength(t *testing.T) {
 
 	if validator.lineLength.Lower != expected[0] || validator.lineLength.Upper != expected[1] {
 		t.Error(errorMsgFmt(expected, validator.lineLength))
+	}
+}
+
+// Content can be marshaled and unmarshaled into the same format.
+func TestMarshalUnmarshal(t *testing.T) {
+	var e error
+	var expected = NewTrailerValidatorWithDefaults()
+
+	var data []byte
+	data, e = expected.MarshalYAML()
+
+	if e != nil {
+		t.Fatalf("Unexpected error: %v", e)
+	}
+
+	var received = NewDefaultTrailerValidator()
+	received.UnmarshalYAML(data)
+
+	if !expected.Equal(received) {
+		t.Log(testingUtils.ValueMismatch("TrailerValidator", *expected, *received))
 	}
 }

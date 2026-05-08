@@ -52,6 +52,31 @@ func NewMessageValidator(
 		TrailerValidator: trailerValidator}, nil
 }
 
+// NewMessageValidatorWithDefaults returns a [MessageValidator] with default values.
+func NewMessageValidatorWithDefaults() (validator *MessageValidator) {
+	var e error
+	validator, e = NewMessageValidator(
+		header.NewHeaderValidatorWithDefaults(),
+		body.NewBodyValidatorWithDefaults(),
+		trailer.NewTrailerValidatorWithDefaults(),
+	)
+	if e != nil {
+		panic(e)
+	}
+	return
+}
+
+// Equal reports whether the two MessageValidators are equal.
+func (validator *MessageValidator) Equal(other *MessageValidator) bool {
+	if validator == nil || other == nil {
+		return validator == other
+	}
+
+	return validator.HeaderValidator.Equal(other.HeaderValidator) &&
+		validator.BodyValidator.Equal(other.BodyValidator) &&
+		validator.TrailerValidator.Equal(other.TrailerValidator)
+}
+
 func (validator *MessageValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }

@@ -36,3 +36,12 @@ func (validator *MessageValidator) UnmarshalYAML(data []byte) (e error) {
 	}
 	return
 }
+
+func (validator *MessageValidator) MarshalYAML() (data []byte, e error) {
+	var temp messageValidator
+	temp.HeaderValidator = validator.HeaderValidator
+	temp.BodyValidator = validator.BodyValidator
+	temp.TrailerValidator = validator.TrailerValidator
+
+	return yaml.Marshal(&temp)
+}

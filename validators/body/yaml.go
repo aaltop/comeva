@@ -17,3 +17,10 @@ func (validator *BodyValidator) UnmarshalYAML(data []byte) (e error) {
 	}
 	return e
 }
+
+func (validator *BodyValidator) MarshalYAML() (data []byte, e error) {
+	var temp bodyValidator
+	temp.LineLength = [2]uint{validator.lineLength.Lower, validator.lineLength.Upper}
+
+	return yaml.Marshal(&temp)
+}

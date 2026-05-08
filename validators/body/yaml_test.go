@@ -1,6 +1,7 @@
 package body
 
 import (
+	testingUtils "comeva/internal/comeva/testing"
 	"fmt"
 	"strings"
 	"testing"
@@ -22,5 +23,25 @@ func TestLineLength(t *testing.T) {
 
 	if expected[0] != validator.lineLength.Lower || expected[1] != validator.lineLength.Upper {
 		t.Error(errorMsgFmt(expected, validator.lineLength))
+	}
+}
+
+// Content can be marshaled and unmarshaled into the same format.
+func TestMarshalUnmarshal(t *testing.T) {
+	var e error
+	var expected = NewBodyValidatorWithDefaults()
+
+	var data []byte
+	data, e = expected.MarshalYAML()
+
+	if e != nil {
+		t.Fatalf("Unexpected error: %v", e)
+	}
+
+	var received = NewDefaultBodyValidator()
+	received.UnmarshalYAML(data)
+
+	if !expected.Equal(received) {
+		t.Log(testingUtils.ValueMismatch("BodyValidator", *expected, *received))
 	}
 }
