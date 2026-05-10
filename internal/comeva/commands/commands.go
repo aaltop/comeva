@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 
 	"comeva/internal/comeva/args"
@@ -234,7 +233,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	if cmdArgs.GlobalFlags.ConfigFile != "" {
 		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
 		if e != nil && cmdArgs.GlobalFlags.Verbosity >= globals.VERBOSITY_WARNING {
-			fmt.Fprint(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: error reading config file: %v\n", e))
+			globals.ErrorLogger.Warning().Printf("Warning: error reading config file: %v\n", e)
 		}
 	}
 

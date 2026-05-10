@@ -57,7 +57,7 @@ func (prog *program) createConfigFile(filename string) (e error) {
 		fmt.Printf("Config file '%v' already exists, skipping creation", filename)
 	} else if !errors.Is(e, fs.ErrNotExist) {
 		if prog.gFlags.Verbosity >= globals.VERBOSITY_WARNING {
-			fmt.Fprintln(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: Error with config file: %v\n", e))
+			globals.ErrorLogger.Warning().Printf("Warning: Error with config file: %v\n", e)
 		}
 	} else {
 		var configFile *os.File
@@ -77,7 +77,7 @@ func (prog *program) createValidatorFile(filename string) (e error) {
 		fmt.Printf("Config file '%v' already exists, skipping creation", filename)
 	} else if !errors.Is(e, fs.ErrNotExist) {
 		if prog.gFlags.Verbosity >= globals.VERBOSITY_WARNING {
-			fmt.Fprintln(os.Stderr, colorSchemes.Warning.ApplyFore("Warning: Error with validator config file: %v\n", e))
+			globals.ErrorLogger.Warning().Printf("Warning: Error with validator config file: %v\n", e)
 		}
 	} else {
 		var validatorFile *os.File
