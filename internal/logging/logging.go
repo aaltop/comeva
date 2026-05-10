@@ -2,6 +2,7 @@
 package logging
 
 import (
+	errorHelpers "comeva/internal/errors"
 	"io"
 	"log"
 	"os"
@@ -9,21 +10,25 @@ import (
 
 // LevelLogger contains loggers with levels of criticality.
 type LevelLogger struct {
+	// Logger is the underlying logger. This can be manipulated directly;
+	// however, the final output of [LevelLogger] should be set using
+	// [LevelLogger.SetOutput]. In particular, setting the output of
+	// [LevelLogger.Logger] will not work to change the output of [LevelLogger].
+	Logger *log.Logger
+
 	level int
 
-	// Logger corresponding to a level of criticality.
-	Debug, Info, Warning, Error, Critical *log.Logger
+	// The final Writer in a possible chain of writers; the actual output.
+	baseOut io.Writer
+
+	// Output corresponding to a level of criticality.
+	debugWriter, infoWriter, warningWriter, errorWriter, criticalWriter *levelWriter
 }
 
 func NewDefaultLevelLogger() (logger *LevelLogger) {
-	var e error
-	logger, e = NewLevelLogger(0, 0, 0, 0, 0, 0, log.Writer(), func(out io.Writer) *log.Logger {
+	logger = errorHelpers.Panic2(NewLevelLogger(0, 0, 0, 0, 0, 0, log.Writer(), func(out io.Writer) *log.Logger {
 		return log.New(out, "", 0)
-	})
-
-	if e != nil {
-		panic(e)
-	}
+	}))
 	return logger
 }
 
@@ -50,13 +55,121 @@ func NewLevelLogger(debug, info, warning, er, critical, external int, out io.Wri
 	logger = &LevelLogger{
 		level: external,
 	}
+	logger.baseOut = out
 
-	logger.Debug = loggerFactory(newLevelWriter(debug, &logger.level, out))
-	logger.Info = loggerFactory(newLevelWriter(info, &logger.level, out))
-	logger.Warning = loggerFactory(newLevelWriter(warning, &logger.level, out))
-	logger.Error = loggerFactory(newLevelWriter(er, &logger.level, out))
-	logger.Critical = loggerFactory(newLevelWriter(critical, &logger.level, out))
+	logger.errorWriter = newLevelWriter(er, &logger.level, logger.baseOut)
+	// default to error level
+	logger.Logger = loggerFactory(logger.errorWriter)
+
+	logger.debugWriter = newLevelWriter(debug, &logger.level, logger.baseOut)
+	logger.infoWriter = newLevelWriter(info, &logger.level, logger.baseOut)
+	logger.warningWriter = newLevelWriter(warning, &logger.level, logger.baseOut)
+	logger.criticalWriter = newLevelWriter(critical, &logger.level, logger.baseOut)
 	return
+}
+
+// NewLevelLoggerWithDefaults returns a [LevelLogger] with some suitable
+// default values set.
+func NewLevelLoggerWithDefaults() (logger *LevelLogger) {
+	logger = errorHelpers.Panic2(NewLevelLogger(
+		DEBUG, INFO, WARNING, ERROR, CRITICAL, ERROR,
+		log.Writer(),
+		func(out io.Writer) *log.Logger { return log.New(out, "", 0) },
+	))
+	return
+}
+
+// SetLevel sets the current logging level of the logger.
+func (logger *LevelLogger) SetLevel(level *int) (e error) {
+
+	defer func() {
+		e = errorHelpers.HandleReturn(recover())
+	}()
+
+	errorHelpers.Return(logger.debugWriter.SetExternalLevel(level))
+	errorHelpers.Return(logger.infoWriter.SetExternalLevel(level))
+	errorHelpers.Return(logger.warningWriter.SetExternalLevel(level))
+	errorHelpers.Return(logger.errorWriter.SetExternalLevel(level))
+	errorHelpers.Return(logger.criticalWriter.SetExternalLevel(level))
+	return
+}
+
+// LevelConfig is configuration for a particular level of a logger.
+type LevelConfig struct {
+	// Output is the output used for a given level. This is intended to be
+	// akin to middleware where the writers do not directly write
+	// the output to anywhere, but instead perform some extra operation
+	// on the output before passing it on.
+	Out io.Writer
+
+	// Level is used as the logging level. If left nil, the level
+	// is not changed.
+	Level *int
+}
+
+// LevelConfigs is the set of configs used to configure the levels
+// of a [LevelLogger].
+type LevelConfigs struct {
+	Debug, Info, Warning, Error, Critical *LevelConfig
+}
+
+// Configure configures each of the logging levels of the logger.
+func (logger *LevelLogger) Configure(config LevelConfigs) (e error) {
+
+	defer func() {
+		e = errorHelpers.HandleReturn(recover())
+	}()
+
+	if config.Debug != nil {
+		errorHelpers.Return(logger.debugWriter.Configure(*config.Debug))
+	}
+	if config.Info != nil {
+		errorHelpers.Return(logger.infoWriter.Configure(*config.Info))
+	}
+	if config.Warning != nil {
+		errorHelpers.Return(logger.warningWriter.Configure(*config.Warning))
+	}
+	if config.Error != nil {
+		errorHelpers.Return(logger.errorWriter.Configure(*config.Error))
+	}
+	if config.Critical != nil {
+		errorHelpers.Return(logger.criticalWriter.Configure(*config.Critical))
+	}
+	return
+}
+
+func (logger *LevelLogger) SetOutput(out io.Writer) {
+	logger.baseOut = out
+}
+
+// Debug returns a logger with logging level at debug.
+func (logger *LevelLogger) Debug() (internalLogger *log.Logger) {
+	logger.Logger.SetOutput(logger.debugWriter)
+	return logger.Logger
+}
+
+// Info returns a logger with logging level at info.
+func (logger *LevelLogger) Info() (internalLogger *log.Logger) {
+	logger.Logger.SetOutput(logger.infoWriter)
+	return logger.Logger
+}
+
+// Warning returns a logger with logging level at warning.
+func (logger *LevelLogger) Warning() (internalLogger *log.Logger) {
+	logger.Logger.SetOutput(logger.warningWriter)
+	return logger.Logger
+}
+
+// Error returns a logger with logging level at error.
+func (logger *LevelLogger) Error() (internalLogger *log.Logger) {
+	logger.Logger.SetOutput(logger.errorWriter)
+	return logger.Logger
+}
+
+// Critical returns a logger with logging level at critical.
+func (logger *LevelLogger) Critical() (internalLogger *log.Logger) {
+	logger.Logger.SetOutput(logger.criticalWriter)
+	return logger.Logger
 }
 
 // levelWriter implements the [io.Writer] interface, wrapping another writer
@@ -90,15 +203,26 @@ func newLevelWriter(level int, externalLevel *int, out io.Writer) (writer *level
 	return
 }
 
-func (writer *levelWriter) Write(p []byte) (n int, err error) {
-	if writer.level >= *writer.externalLevel {
-		return writer.out.Write(p)
+func (writer *levelWriter) SetExternalLevel(level *int) (e error) {
+	writer.externalLevel = level
+	return
+}
+
+// Configure configures the writer.
+func (writer *levelWriter) Configure(config LevelConfig) (e error) {
+	if config.Level != nil {
+		writer.level = *config.Level
+	}
+	if config.Out != nil {
+		writer.out = config.Out
 	}
 	return
 }
 
-func (writer *levelWriter) SetExternalLevel(level *int) (e error) {
-	writer.externalLevel = level
+func (writer *levelWriter) Write(p []byte) (n int, err error) {
+	if writer.level >= *writer.externalLevel {
+		return writer.out.Write(p)
+	}
 	return
 }
 
