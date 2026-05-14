@@ -43,7 +43,7 @@ be ignored and the defaults used instead`)
 		data, e = os.ReadFile(prog.Args.ValidatorConfigFile)
 		if e != nil {
 			panic(exitState.ExitState{
-				Reason: errors.New(errorColor.ApplyFore(
+				Reason: errors.New(errorColor.ApplyForef(
 					"Error reading validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR,
@@ -52,7 +52,7 @@ be ignored and the defaults used instead`)
 		e = messageValidator.UnmarshalYAML(data)
 		if e != nil {
 			panic(exitState.ExitState{
-				Reason: errors.New(errorColor.ApplyFore(
+				Reason: errors.New(errorColor.ApplyForef(
 					"Error unmarshaling validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR})

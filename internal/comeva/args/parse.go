@@ -65,7 +65,7 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[strin
 
 	if e != nil {
 		exitstate.NewExitState(
-			errors.New(colorSchemes.Error.ApplyFore("Error parsing global flags: %v", e)),
+			errors.New(colorSchemes.Error.ApplyForef("Error parsing global flags: %v", e)),
 			exitstate.PROGRAM_ERROR,
 		).Panic()
 	}

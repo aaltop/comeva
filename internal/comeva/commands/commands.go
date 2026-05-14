@@ -219,7 +219,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 		e = com.CommandFlags.Parse(cmdArgs.Flags)
 		if e != nil {
 			extState.Code = exitstate.PROGRAM_ERROR
-			extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error parsing flags: %v\n", e))
+			extState.Reason = errors.New(colorSchemes.Error.ApplyForef("Error parsing flags: %v\n", e))
 			return
 		}
 	}

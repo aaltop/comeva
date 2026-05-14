@@ -25,7 +25,7 @@ func Function(gFlags *args.GlobalFlags, passedGlobalFlags map[string]bool, conf 
 
 	e = os.Mkdir(globals.CONFIG_BASE_PATH, 0775)
 	if e != nil && !errors.Is(e, fs.ErrExist) {
-		extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error creating config directory: %v", e))
+		extState.Reason = errors.New(colorSchemes.Error.ApplyForef("Error creating config directory: %v", e))
 		extState.Code = exitstate.PROGRAM_ERROR
 	}
 

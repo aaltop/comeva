@@ -60,7 +60,7 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 	commitMessage, e = io.ReadFileString(arg.CommitFile)
 
 	if e != nil {
-		extState.Reason = errors.New(colorSchemes.Error.ApplyFore("Error reading commit message file: %v", e))
+		extState.Reason = errors.New(colorSchemes.Error.ApplyForef("Error reading commit message file: %v", e))
 		extState.Code = exitstate.PROGRAM_ERROR
 		return
 	}
@@ -80,9 +80,9 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 				prob = "problems"
 			}
 
-			fmt.Println(colorSchemes.Error.ApplyFore("%d %v found:", len(unWrapped), prob))
+			fmt.Println(colorSchemes.Error.ApplyForef("%d %v found:", len(unWrapped), prob))
 			for i, err := range unWrapped {
-				print(colorSchemes.Error.ApplyFore("%d: ", i+1))
+				print(colorSchemes.Error.ApplyForef("%d: ", i+1))
 				fmt.Printf("%v\n", err)
 			}
 		} else {
