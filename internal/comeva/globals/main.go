@@ -27,5 +27,8 @@ var ErrorLogger = logging.CreateColoredLogger()
 
 func init() {
 	DebugLogger.Logger = logging.NewDebugLogger(log.Writer())
+	var debugLevel int = 0
+	DebugLogger.SetLevel(&debugLevel)
+	DebugLogger.SetOutput(log.Writer())
 	ErrorLogger.SetOutput(os.Stderr)
 }

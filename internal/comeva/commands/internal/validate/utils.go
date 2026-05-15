@@ -1,8 +1,7 @@
 package validate
 
 import (
-	"comeva/internal/logging"
-	"os"
+	"comeva/internal/comeva/globals"
 )
 
-var debugLogger = logging.NewDebugLogger(os.Stdout)
+var debugLogger = globals.DebugLogger

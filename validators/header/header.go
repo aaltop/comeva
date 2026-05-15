@@ -147,7 +147,7 @@ func NewHeaderValidatorWithDefaults() (validator *HeaderValidator) {
 	validator, e = NewHeaderValidator(
 		[]string{"feat", "fix"},
 		[]string{},
-		[]string{"Add", "Change", "Remove", "Update", "Fix"},
+		[]string{"Add", "Change", "Remove", "Update", "Fix", "Make"},
 		[2]uint{0, 80},
 	)
 	if e != nil {

@@ -35,12 +35,21 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 	*messageValidator = *messageValidation.NewDefaultMessageValidator()
 	// if validator settings are provided through a file (if they're not, the only
 	// other option is the standard setup provided below this block)
-	debugLogger.Println(`TODO: sort out the case when config file is given, but is not valid,
-namely when it is NOT passed as a a flag or in the config, in which case it should
-be ignored and the defaults used instead`)
-	if len(prog.Args.ValidatorConfigFile) > 0 {
+	if prog.passedLocalFlags[string(flagNames.ValidatorConfigFile)] || prog.conf.ValidatorConfigFile != nil {
+
+		var validatorConfigFile string = prog.Args.ValidatorConfigFile
+		if !prog.passedLocalFlags[string(flagNames.ValidatorConfigFile)] {
+			debugLogger.Debug().Printf(
+				"Using validator config file location '%v' as specified in the config file",
+				*prog.conf.ValidatorConfigFile,
+			)
+			validatorConfigFile = *prog.conf.ValidatorConfigFile
+		} else {
+			debugLogger.Debug().Printf("Using validator config file location '%v' as specified on the command line", prog.Args.ValidatorConfigFile)
+		}
+
 		var data []byte
-		data, e = os.ReadFile(prog.Args.ValidatorConfigFile)
+		data, e = os.ReadFile(validatorConfigFile)
 		if e != nil {
 			panic(exitState.ExitState{
 				Reason: errors.New(errorColor.ApplyForef(

@@ -17,7 +17,10 @@ import (
 
 // program acts as the state of the command.
 type program struct {
-	Args *args
+	Args              *args
+	passedLocalFlags  map[string]bool
+	passedGlobalFlags map[string]bool
+	conf              *config.Config
 }
 
 func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
@@ -55,6 +58,9 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 
 	var prog *program = &program{}
 	prog.Args = arg
+	prog.passedGlobalFlags = passedGlobalFlags
+	prog.passedLocalFlags = passedLocalFlags
+	prog.conf = conf
 
 	var commitMessage string
 	commitMessage, e = io.ReadFileString(arg.CommitFile)
