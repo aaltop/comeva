@@ -11,8 +11,14 @@ import (
 func CreateColoredLogger() (logger *LevelLogger) {
 
 	logger = NewLevelLoggerWithDefaults()
-	var createModWriter = func(colorScheme *ansi.ColorScheme) baseIo.Writer {
+	var createModWriter = func(colorScheme *ansi.ColorScheme, modif ...func(in string) (out string)) baseIo.Writer {
 		var modifier = io.NewDefaultModifier[string]()
+
+		// doesn't allow splatting of it for some reason (needs to be
+		// typed exactly the same, not just equivalent?)
+		for _, fun := range modif {
+			modifier.Add(fun)
+		}
 		modifier.Add(colorScheme.ApplyFore)
 		return io.NewStringModifierWriter(
 			modifier,

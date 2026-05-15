@@ -20,6 +20,9 @@ type LevelLogger struct {
 
 	// The final Writer in a possible chain of writers; the actual output.
 	baseOut io.Writer
+	// Used as the base prefix for the [LevelLogger.Logger], set using
+	// [LevelLogger.SetPrefix].
+	basePrefix string
 
 	// Output corresponding to a level of criticality.
 	debugWriter, infoWriter, warningWriter, errorWriter, criticalWriter *levelWriter
@@ -55,11 +58,13 @@ func NewLevelLogger(debug, info, warning, er, critical, external int, out io.Wri
 	logger = &LevelLogger{
 		level: external,
 	}
-	logger.baseOut = out
 
 	logger.errorWriter = newLevelWriter(er, &logger.level, logger.baseOut)
 	// default to error level
 	logger.Logger = loggerFactory(logger.errorWriter)
+
+	logger.baseOut = out
+	logger.basePrefix = logger.Logger.Prefix()
 
 	logger.debugWriter = newLevelWriter(debug, &logger.level, logger.baseOut)
 	logger.infoWriter = newLevelWriter(info, &logger.level, logger.baseOut)
@@ -142,33 +147,44 @@ func (logger *LevelLogger) SetOutput(out io.Writer) {
 	logger.baseOut = out
 }
 
+// SetPrefix sets the base prefix for the logger. The actual prefix
+// may contain more.
+func (logger *LevelLogger) SetPrefix(prefix string) {
+	logger.basePrefix = prefix
+}
+
 // Debug returns a logger with logging level at debug.
 func (logger *LevelLogger) Debug() (internalLogger *log.Logger) {
 	logger.Logger.SetOutput(logger.debugWriter)
+	logger.Logger.SetPrefix("DEBUG " + logger.basePrefix)
 	return logger.Logger
 }
 
 // Info returns a logger with logging level at info.
 func (logger *LevelLogger) Info() (internalLogger *log.Logger) {
 	logger.Logger.SetOutput(logger.infoWriter)
+	logger.Logger.SetPrefix("INFO " + logger.basePrefix)
 	return logger.Logger
 }
 
 // Warning returns a logger with logging level at warning.
 func (logger *LevelLogger) Warning() (internalLogger *log.Logger) {
 	logger.Logger.SetOutput(logger.warningWriter)
+	logger.Logger.SetPrefix("WARNING " + logger.basePrefix)
 	return logger.Logger
 }
 
 // Error returns a logger with logging level at error.
 func (logger *LevelLogger) Error() (internalLogger *log.Logger) {
 	logger.Logger.SetOutput(logger.errorWriter)
+	logger.Logger.SetPrefix("ERROR " + logger.basePrefix)
 	return logger.Logger
 }
 
 // Critical returns a logger with logging level at critical.
 func (logger *LevelLogger) Critical() (internalLogger *log.Logger) {
 	logger.Logger.SetOutput(logger.criticalWriter)
+	logger.Logger.SetPrefix("CRITICAL " + logger.basePrefix)
 	return logger.Logger
 }
 
