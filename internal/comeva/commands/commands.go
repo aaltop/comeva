@@ -215,6 +215,8 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 
 	var colorSchemes = ansi.BasicColorSchemes
 
+	globals.ErrorLogger.SetLevel(&cmdArgs.GlobalFlags.LoggingLevel)
+
 	if com.CommandFlags != nil {
 		e = com.CommandFlags.Parse(cmdArgs.Flags)
 		if e != nil {
@@ -232,10 +234,23 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	var conf = config.NewDefaultConfig()
 	if cmdArgs.GlobalFlags.ConfigFile != "" {
 		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
-		if e != nil && cmdArgs.GlobalFlags.Verbosity >= globals.VERBOSITY_WARNING {
-			globals.ErrorLogger.Warning().Printf("Warning: error reading config file: %v\n", e)
+		if e != nil {
+			if !cmdArgs.PassedGlobalFlags[string(args.GlobalFlagNames.ConfigFile)] {
+				globals.ErrorLogger.Warning().Printf("Error reading config file: %v\n", e)
+			} else {
+				extState.Code = exitstate.PROGRAM_ERROR
+				extState.Reason = errors.New(colorSchemes.Error.ApplyForef("Error reading config file: %v\n", e))
+				return
+			}
 		}
 	}
+	var loggingLevel = cmdArgs.GlobalFlags.LoggingLevel
+	if !cmdArgs.PassedGlobalFlags[string(args.GlobalFlagNames.LoggingLevel)] && conf.LoggingLevel != nil {
+		loggingLevel = *conf.LoggingLevel
+	}
+
+	var debug = true
+	globals.Init(globals.InitArgs{LoggingLevel: &loggingLevel, Debug: &debug})
 
 	return com.function(cmdArgs.GlobalFlags, cmdArgs.PassedGlobalFlags, conf)
 }

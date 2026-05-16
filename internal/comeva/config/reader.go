@@ -19,6 +19,8 @@ type Config struct {
 	CommitFile *string
 	// The verbosity of the program, higher is more verbose. Default 0.
 	Verbosity *int
+	// The logging level.
+	LoggingLevel *int
 }
 
 // NewDefaultConfig creates the base Config.
@@ -33,7 +35,9 @@ func NewConfigWithDefaults() (config *Config) {
 	config, e = NewConfig(
 		globals.VALIDATOR_CONFIG_PATH,
 		globals.COMMIT_MESSAGE_PATH,
-		globals.VERBOSITY_DEFAULT)
+		globals.VERBOSITY_DEFAULT,
+		globals.LOGGING_LEVEL_DEFAULT,
+	)
 	if e != nil {
 		panic(e)
 	}
@@ -42,11 +46,13 @@ func NewConfigWithDefaults() (config *Config) {
 
 func NewConfig(
 	validatorConfigFile, commitFile string,
-	verbosity int) (config *Config, e error) {
+	verbosity int, loggingLevel int,
+) (config *Config, e error) {
 	config = NewDefaultConfig()
 	config.ValidatorConfigFile = &validatorConfigFile
 	config.CommitFile = &commitFile
 	config.Verbosity = &verbosity
+	config.LoggingLevel = &loggingLevel
 	return
 }
 
@@ -58,13 +64,15 @@ func (config *Config) Equal(other *Config) bool {
 
 	return equal.NilEqual(config.ValidatorConfigFile, other.ValidatorConfigFile) &&
 		equal.NilEqual(config.CommitFile, other.CommitFile) &&
-		equal.NilEqual(config.Verbosity, other.Verbosity)
+		equal.NilEqual(config.Verbosity, other.Verbosity) &&
+		equal.NilEqual(config.LoggingLevel, other.LoggingLevel)
 }
 
 type configYaml struct {
 	ValidatorConfigFile *string `yaml:"validatorConfigFile"`
 	CommitFile          *string `yaml:"commitFile"`
 	Verbosity           *int    `yaml:"verbosity"`
+	LoggingLevel        *int    `yaml:"loggingLevel"`
 }
 
 func (config *Config) UnmarshalYAML(data []byte) (e error) {
@@ -73,6 +81,7 @@ func (config *Config) UnmarshalYAML(data []byte) (e error) {
 		config.CommitFile = temp.CommitFile
 		config.ValidatorConfigFile = temp.ValidatorConfigFile
 		config.Verbosity = temp.Verbosity
+		config.LoggingLevel = temp.LoggingLevel
 	}
 	return
 }
@@ -82,6 +91,7 @@ func (config *Config) MarshalYAML() (data []byte, e error) {
 	temp.CommitFile = config.CommitFile
 	temp.ValidatorConfigFile = config.ValidatorConfigFile
 	temp.Verbosity = config.Verbosity
+	temp.LoggingLevel = config.LoggingLevel
 
 	return goccyYaml.Marshal(&temp)
 }

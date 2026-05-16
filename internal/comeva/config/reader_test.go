@@ -61,7 +61,7 @@ func TestUnmarshalVerbosity(t *testing.T) {
 	var config = NewDefaultConfig()
 
 	if config.Verbosity != nil {
-		t.Errorf("Expected empty default verbosity value, got %v", config.CommitFile)
+		t.Errorf("Expected empty default verbosity value, got %v", config.Verbosity)
 	}
 
 	var verbosity = 11
@@ -79,9 +79,31 @@ verbosity: %d`
 	}
 }
 
+func TestUnmarshalLoggingLevel(t *testing.T) {
+	var config = NewDefaultConfig()
+
+	if config.LoggingLevel != nil {
+		t.Errorf("Expected empty default logging level value, got %v", config.LoggingLevel)
+	}
+
+	var loggingLevel = 11
+	var yamlText = `
+loggingLevel: %d`
+
+	yamlText = fmt.Sprintf(yamlText, loggingLevel)
+
+	if e := config.UnmarshalYAML([]byte(yamlText)); e != nil {
+		t.Errorf("Valid config file was found to be invalid: %v\n", e)
+	}
+
+	if *config.LoggingLevel != loggingLevel {
+		t.Errorf("validator logging level did not match,\nExpected:\n%d\nReceived:\n%d\n", loggingLevel, *config.LoggingLevel)
+	}
+}
+
 func TestEqual(t *testing.T) {
 	var conf, equal = FixtureConfig(), FixtureConfig()
-	var notEqual, e = NewConfig("notliekly", "meniether", -999)
+	var notEqual, e = NewConfig("notliekly", "meniether", -999, -543)
 	if e != nil {
 		t.Fatalf("Unexpected error: %v\n", e)
 	}
@@ -97,7 +119,7 @@ func TestEqual(t *testing.T) {
 
 // Content can be marshaled and unmarshaled into the same state.
 func TestMarshalUnmarshal(t *testing.T) {
-	var config, e = NewConfig("valida", "commi", 123)
+	var config, e = NewConfig("valida", "commi", 123, 321)
 	if e != nil {
 		t.Fatalf("Unexpected error: %v\n", e)
 	}

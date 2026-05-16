@@ -3,11 +3,13 @@ package args
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"strings"
 
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+	"comeva/internal/logging"
 	flagUtils "comeva/internal/utils/flag"
 )
 
@@ -17,11 +19,12 @@ type flagString string
 
 // // GlobalFlagNames holds the string name of each global command line flag.
 var GlobalFlagNames = struct {
-	Help, Verbosity, ConfigFile flagString
+	Help, Verbosity, ConfigFile, LoggingLevel flagString
 }{
-	Help:       "help",
-	Verbosity:  "verbosity",
-	ConfigFile: "config-file",
+	Help:         "help",
+	Verbosity:    "verbosity",
+	ConfigFile:   "config-file",
+	LoggingLevel: "logging-level",
 }
 
 var globalFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
@@ -38,6 +41,14 @@ var configFile = globalFlagSet.String(
 	string(GlobalFlagNames.ConfigFile), globals.CONFIG_PATH,
 	"File path for configuration file for setting command line values. Any values given on the command line take precedence.")
 
+var loggingLevel = globalFlagSet.Int(
+	string(GlobalFlagNames.LoggingLevel), logging.ERROR,
+	fmt.Sprintf(
+		"Level set for logging. The levels are: debug: %d; info: %d; warning: %d; error: %d; critical: %d",
+		logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL,
+	),
+)
+
 type GlobalFlags struct {
 	// Help reports whether a help flag was passed.
 	Help bool
@@ -45,6 +56,8 @@ type GlobalFlags struct {
 	Verbosity int
 	// ConfigFile is the file path for a configuration file for setting command line values.
 	ConfigFile string
+	// LoggingLevel is the logging level.
+	LoggingLevel int
 }
 
 func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
@@ -76,6 +89,7 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[strin
 	gFlags.Help = *helpFlag
 	gFlags.Verbosity = *verbosity
 	gFlags.ConfigFile = *configFile
+	gFlags.LoggingLevel = *loggingLevel
 
 	return gFlags, passedFlags, globalFlagSet.Args()
 }

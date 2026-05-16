@@ -21,6 +21,7 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 	}()
 
 	var cmdArgs *args.CommandArgs = args.ParseCommandArgs(os.Args[1:])
+
 	var base = errors.Panic2(commands.NewBaseCommand())
 	var sub *commands.Command = base.GetSubCommand(cmdArgs.Commands)
 	if sub != nil {
