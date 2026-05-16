@@ -31,7 +31,7 @@ func Function(gFlags *args.GlobalFlags, passedGlobalFlags map[string]bool, conf 
 
 	var prog = &program{gFlags: gFlags, passedGlobalFlags: passedGlobalFlags, conf: conf}
 
-	var configFileName = globals.CONFIG_BASE_PATH + "config.yaml"
+	var configFileName = globals.CONFIG_PATH
 	e = prog.createConfigFile(configFileName)
 	if e != nil {
 		extState.Code = exitstate.PROGRAM_ERROR
@@ -39,7 +39,7 @@ func Function(gFlags *args.GlobalFlags, passedGlobalFlags map[string]bool, conf 
 		return
 	}
 
-	var validatorConfigFileName = globals.CONFIG_BASE_PATH + "validator.yaml"
+	var validatorConfigFileName = globals.VALIDATOR_CONFIG_PATH
 	e = prog.createValidatorFile(validatorConfigFileName)
 	if e != nil {
 		extState.Code = exitstate.PROGRAM_ERROR

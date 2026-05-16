@@ -35,7 +35,7 @@ var verbosity = globalFlagSet.Int(
 	"program verbosity, lower means less verbose, higher more verbose")
 
 var configFile = globalFlagSet.String(
-	string(GlobalFlagNames.ConfigFile), globals.CONFIG_BASE_PATH+"config.yaml",
+	string(GlobalFlagNames.ConfigFile), globals.CONFIG_PATH,
 	"File path for configuration file for setting command line values. Any values given on the command line take precedence.")
 
 type GlobalFlags struct {

@@ -10,6 +10,15 @@ import (
 // CONFIG_BASE_PATH is the base path of the config directory for the program.
 const CONFIG_BASE_PATH string = "./.comeva/"
 
+// VALIDATOR_CONFIG_PATH is the default path for the validator configuration file.
+const VALIDATOR_CONFIG_PATH = CONFIG_BASE_PATH + "validator.yaml"
+
+// CONFIG_PATH is the default path for the configuration file.
+const CONFIG_PATH = CONFIG_BASE_PATH + "config.yaml"
+
+// COMMIT_MESSAGE_PATH is the default path for the git commit message file.
+const COMMIT_MESSAGE_PATH = "./git_commit.txt"
+
 // VERBOSITY_DEFAULT is the default value for the verbosity of the program.
 const VERBOSITY_DEFAULT int = 0
 

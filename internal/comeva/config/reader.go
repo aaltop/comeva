@@ -31,8 +31,8 @@ func NewDefaultConfig() (config *Config) {
 func NewConfigWithDefaults() (config *Config) {
 	var e error
 	config, e = NewConfig(
-		globals.CONFIG_BASE_PATH+"validator.yaml",
-		"./git_commit.txt",
+		globals.VALIDATOR_CONFIG_PATH,
+		globals.COMMIT_MESSAGE_PATH,
 		globals.VERBOSITY_DEFAULT)
 	if e != nil {
 		panic(e)

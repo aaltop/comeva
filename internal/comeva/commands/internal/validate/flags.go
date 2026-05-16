@@ -19,9 +19,9 @@ var flagNames = struct {
 	CommitFile:          "commit-file",
 }
 var validatorConfigFile = FlagSet.String(
-	string(flagNames.ValidatorConfigFile), globals.CONFIG_BASE_PATH+"validator.yaml",
+	string(flagNames.ValidatorConfigFile), globals.VALIDATOR_CONFIG_PATH,
 	"file path for configuration of validators")
-var commitFile = FlagSet.String(string(flagNames.CommitFile), "./git_commit.txt", "file path for commit file")
+var commitFile = FlagSet.String(string(flagNames.CommitFile), globals.COMMIT_MESSAGE_PATH, "file path for commit file")
 
 // args handles the arguments passed to the program.
 type args struct {
