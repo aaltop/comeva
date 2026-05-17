@@ -26,10 +26,6 @@ const LOGGING_LEVEL_DEFAULT = logging.ERROR
 // VERBOSITY_DEFAULT is the default value for the verbosity of the program.
 const VERBOSITY_DEFAULT int = 0
 
-// VERBOSITY_WARNING is the verbosity level at and beyond which warnings
-// should be printed.
-const VERBOSITY_WARNING int = 10
-
 // DebugLogger is a logger with an output particularly suitable for
 // debugging.
 var DebugLogger = logging.CreateColoredLogger()
