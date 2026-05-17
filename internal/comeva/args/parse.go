@@ -29,13 +29,13 @@ var GlobalFlagNames = struct {
 
 var globalFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
 
-var helpFlag = globalFlagSet.Bool(string(GlobalFlagNames.Help), false, "print help")
+var helpFlag = globalFlagSet.Bool(string(GlobalFlagNames.Help), false, "Print help.")
 
 const verbosityDefault int = globals.VERBOSITY_DEFAULT
 
 var verbosity = globalFlagSet.Int(
 	string(GlobalFlagNames.Verbosity), verbosityDefault,
-	"program verbosity, lower means less verbose, higher more verbose")
+	"Program verbosity, lower means less verbose, higher more verbose.")
 
 var configFile = globalFlagSet.String(
 	string(GlobalFlagNames.ConfigFile), globals.CONFIG_PATH,

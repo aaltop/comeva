@@ -24,12 +24,10 @@ func NewBaseCommand() (baseCommand *Command, e error) {
 	subCommands[CommandNames.Validate] = errors.Return2(NewValidateCommand())
 	subCommands[CommandNames.Init] = errors.Return2(NewInitCommand())
 
-	for k, v := range subCommands {
-		hlpMsgUsg.AddExample(
-			k,
-			v.HelpMessage.synopsis,
-		)
-	}
+	hlpMsgUsg.AddExample(
+		"<subcommand>",
+		"Execute the subcommand.",
+	)
 
 	var options = newDefaultFlagOptions()
 	var hlpMsg *HelpMessage

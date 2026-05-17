@@ -53,7 +53,7 @@ func (usage HelpMessageUsage) String() string {
 	for _, us := range usage {
 		fmt.Fprintf(
 			&usageMessage,
-			"%v\n%v\n",
+			"%v\n%v",
 			ioUtils.IndentLines(us.Invocation, 4), ioUtils.IndentLines(us.Description, 8),
 		)
 	}
@@ -109,7 +109,7 @@ func (flagOpt FlagOptions) String() string {
 	for _, group := range flagOpt {
 		fmt.Fprintf(
 			&buffer,
-			"%v:\n%v\n", ioUtils.IndentLines(group.name, 0), ioUtils.IndentLines(group.description, 0),
+			"%v:\n%v", ioUtils.IndentLines(group.name, 0), ioUtils.IndentLines(group.description, 0),
 		)
 	}
 
@@ -227,7 +227,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	}
 
 	if cmdArgs.GlobalFlags.Help {
-		println(com.HelpMessage.String())
+		println(com.Help())
 		return
 	}
 
@@ -282,5 +282,17 @@ func (com *Command) GetSubCommand(commands []string) (subCom *Command) {
 	}
 
 	subCom = subCom.GetSubCommand(commands[1:])
+	return
+}
+
+// Help returns the help message for the command.
+func (com *Command) Help() string {
+	return fmt.Sprintf("%vSubcommands:%v\n", com.HelpMessage, com.subCommands)
+}
+
+func (comList CommandList) String() (out string) {
+	for k, v := range comList {
+		out += fmt.Sprintf("\n%v\n%v", ioUtils.IndentLines(k, 4), ioUtils.IndentLines(v.HelpMessage.synopsis, 8))
+	}
 	return
 }

@@ -27,7 +27,7 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 	if sub != nil {
 		extState = sub.Execute(cmdArgs)
 	} else {
-		fmt.Println(base.HelpMessage.String())
+		fmt.Println(base.Help())
 	}
 	return
 }
