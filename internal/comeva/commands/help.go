@@ -1,9 +1,8 @@
 package commands
 
 import (
-	"comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	exitstate "comeva/internal/exitState"
+	help "comeva/internal/comeva/commands/internal/help"
+	flagUtils "comeva/internal/utils/flag"
 	"fmt"
 )
 
@@ -13,11 +12,16 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 
 	var usage = HelpMessageUsage{}
 	usage.AddExample(
-		fmt.Sprintf("%s <item>", CommandNames.Help),
-		`Get help on the given item.`,
+		fmt.Sprintf("%s", CommandNames.Help),
+		"Show the documentation structure. This represents a directory tree which the path flag should be based on, not including the <root>.",
+	)
+	usage.AddExample(
+		fmt.Sprintf("%s --path <path>", CommandNames.Help),
+		`Get help on the given item specified by the path.`,
 	)
 
 	var options = newDefaultFlagOptions()
+	options.AddGroup("Other", flagUtils.GetDefaults(help.FlagSet))
 	helpMsg, e = NewHelpMessage(
 		"Get help on a given item.",
 		"",
@@ -29,15 +33,12 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 	}
 	helpCommand, e = NewCommand(
 		*helpMsg,
-		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
-			extState = exitstate.NewDefaultExitState()
-			fmt.Println(helpMsg.String())
-			return
-		},
+		help.Function,
 		make(CommandList),
 	)
 	if e != nil {
 		return
 	}
+	helpCommand.CommandFlags = help.FlagSet
 	return
 }
