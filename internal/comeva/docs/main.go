@@ -193,7 +193,7 @@ func init() {
 	var direc = regexp.MustCompile(`docs/(?P<subdir>(?:.*?/)*.*\.md\z)`)
 
 	fs.WalkDir(docsFolder, "docs", func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
+		if d.IsDir() || !direc.MatchString(path) {
 			return nil
 		}
 		var cont = direc.ReplaceAllString(path, "$subdir")
