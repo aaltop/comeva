@@ -9,7 +9,7 @@ import (
 func NewInitCommand() (initCommand *Command, e error) {
 
 	var hlpMsgUsage = &HelpMessageUsage{}
-	hlpMsgUsage.AddExample("init", "")
+	hlpMsgUsage.AddExample("init", "Use default values to initialise.")
 	var hlpMsg *HelpMessage
 	var flagOptions = newDefaultFlagOptions()
 	hlpMsg, e = NewHelpMessage(

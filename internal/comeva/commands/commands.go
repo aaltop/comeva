@@ -47,14 +47,12 @@ func (hlpMsgUsg *HelpMessageUsage) AddExample(
 
 func (usage HelpMessageUsage) String() string {
 
-	// TODO: read Description as lines, indent each line as necessary
-
 	var usageMessage strings.Builder
 	for _, us := range usage {
 		fmt.Fprintf(
 			&usageMessage,
-			"%v\n%v",
-			ioUtils.IndentLines(us.Invocation, 4), ioUtils.IndentLines(us.Description, 8),
+			"%v\n%v\n",
+			ioUtils.IndentLines(us.Invocation, 2), ioUtils.IndentLines(us.Description, 6),
 		)
 	}
 
@@ -156,11 +154,13 @@ func (msg HelpMessage) String() (msgString string) {
 %v
 
 Usage:
+|
 %v
-Options:
 
+Options:
+|
 %v
-`, msg.synopsis, msg.description, msg.usage, msg.options)
+`, msg.synopsis, msg.description, ioUtils.IndentLinesWithString(msg.usage.String(), 1, "| "), ioUtils.IndentLinesWithString(msg.options.String(), 1, "| "))
 }
 
 type CommandFunc func(gFlags *args.GlobalFlags, passedGLobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState)
@@ -287,12 +287,12 @@ func (com *Command) GetSubCommand(commands []string) (subCom *Command) {
 
 // Help returns the help message for the command.
 func (com *Command) Help() string {
-	return fmt.Sprintf("%vSubcommands:%v\n", com.HelpMessage, com.subCommands)
+	return fmt.Sprintf("%vSubcommands:\n%v\n", com.HelpMessage, ioUtils.IndentLinesWithString(com.subCommands.String(), 1, "| "))
 }
 
 func (comList CommandList) String() (out string) {
 	for k, v := range comList {
-		out += fmt.Sprintf("\n%v\n%v", ioUtils.IndentLines(k, 4), ioUtils.IndentLines(v.HelpMessage.synopsis, 8))
+		out += fmt.Sprintf("\n%v\n%v", ioUtils.IndentLines(k, 2), ioUtils.IndentLines(v.HelpMessage.synopsis, 6))
 	}
 	return
 }
