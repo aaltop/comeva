@@ -1,10 +1,11 @@
 # Header Validation
 
-The header of a commit message is of the following format (see
-[Conventional Commits][1]):
+The header is the first part of the commit message. It spans a single line, the
+first line of the message. The header of a commit message is of the following
+format (see [Conventional Commits][1]):
 
 ```
-<type>[(<scope>)]: <verb> <content>
+<type>[(<scope>)][!]: <verb> <content>
 ```
 
 - type
@@ -42,6 +43,12 @@ The header of a commit message is of the following format (see
         - content
             - The rest of the description after the verb. Not particularly limited
             in what it can contain.
+
+Additionally, if a breaking change is introduced in the commit, an exclamation
+mark (!) needs to be used to denote this fact in the header. it sits between
+the type and optional scope, and the colon. If this exclamation mark is encountered
+in the header, a matching trailer describing the breaking change needs to be
+included in [the trailer section](./trailer.md).
 
 Besides the content of the header, the length of the header can also be limited.
 By default, it is set to be between 0 and 80 characters, and is configurable.

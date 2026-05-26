@@ -1,7 +1,7 @@
 # Commit Message Validation (comeva)
 
 A utility to validate the contents of a git commit message according to a given
-format and user-specified settings. Non-opinionated but with opinionated
+format and user-specified settings. Largely non-opinionated but with opinionated
 defaults.
 
 The format of commit messages is largely based on general rules of git commit
