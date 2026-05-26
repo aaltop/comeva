@@ -1,0 +1,25 @@
+/*
+.*
+
+# INCLUDE BACK
+# ------------
+
+# DIRECTORIES
+# ------------
+
+# DIRECTORIES
+# ============
+
+# FILES
+# ------------
+
+!.gitignore
+
+!apply_template.py
+!docs_copy.py
+
+# FILES
+# ============
+
+# INCLUDE BACK
+# ============
