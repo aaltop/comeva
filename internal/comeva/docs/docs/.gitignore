@@ -7,7 +7,7 @@
 # DIRECTORIES
 # ------------
 
-!docs
+!validation
 
 # DIRECTORIES
 # ============
@@ -17,8 +17,7 @@
 
 !.gitignore
 
-!main.go
-
+!index.md
 
 # FILES
 # ============
