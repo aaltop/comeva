@@ -2,6 +2,8 @@
 
 The help command is used to access the documentation of comeva from the command
 line. The documentation is mapped as its directory structure to the help command.
+Documentation consists of Markdown files.
+
 Without arguments, the documentation structure is shown. Using the path argument,
 a documentation path can be specified: directory contents will be shown when the passed
 argument ends with a slash, and file contents when the argument does *not* end with

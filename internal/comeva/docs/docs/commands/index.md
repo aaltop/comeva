@@ -50,3 +50,23 @@ Another thing considering command-specific arguments is that there are no
 shorthand flags. For one, for the developer, this prevents having to specify
 shorthands in addition to the existing full argument and dealing with both.
 Second, again having more explicit keyword arguments makes invocations more clear.
+
+## General behaviour
+
+The program utilises four exit states:
+
+- successful
+    - exit code 0. The program ran successfully.
+
+- program error
+    - exit code 1. The program encountered an expected error (e.g. a passed flag
+    was found to be invalid in syntax and could not be parsed) that lead to
+    program termination.
+
+- validation error
+    - exit code 2. The program validated a commit message and ran succesfully,
+    but validation errors were encountered.
+
+- uncaught error
+    - exit code 3. The program encountered an unexpected error that could not
+    be handled.
