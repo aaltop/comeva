@@ -62,7 +62,7 @@ type directory struct {
 
 func newDefaultDirectory() (dir *directory) {
 	return &directory{
-		Name:  "<root>",
+		Name:  "/",
 		Dirs:  make(map[string]*directory),
 		Files: make(map[string]string),
 	}
@@ -192,6 +192,7 @@ var dir = newDefaultDirectory()
 func init() {
 	var direc = regexp.MustCompile(`docs/(?P<subdir>(?:.*?/)*.*\.md\z)`)
 
+	// map the embedded file system to dir
 	fs.WalkDir(docsFolder, "docs", func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() || !direc.MatchString(path) {
 			return nil
@@ -212,24 +213,37 @@ func init() {
 }
 
 // Get returns the documentation or structure for the given path if it exists,
-// returning a non-nil error otherwise.
-// If the path is not a terminating one (not a file), returns the children of
-// that path.
+// returning a non-nil error otherwise. . If path ends in an empty string,
+// a directory is assumed. If it does not end in an empty string, a file is assumed.
+// if path is empty or contains a single empty string, the root directory is assumed.
 func Get(path ...string) (content string, e error) {
 
 	var readDir readDirectory = dir
-	if len(path) > 0 {
-		var subDir readWriteDirectory
-		subDir, e = dir.GetReadWriteDirectory(path...)
+
+	switch {
+
+	// root
+	case len(path) == 0 || (len(path) == 1 && path[0] == ""):
+		content = readDir.String()
+
+	// double forward slash would work here, but it should still just error
+	// in that case as it's not able to find anything
+	// non-root directory
+	case path[len(path)-1] == "":
+		var subDir readDirectory
+		subDir, e = dir.GetReadDirectory(path[:len(path)-1]...)
 		if e == nil {
-			return subDir.String(), nil
+			content = subDir.String()
+		} else {
+			e = fmt.Errorf("Directory '%v' not found.", "/"+strings.Join(path, "/"))
 		}
+
+	default:
 		content, e = readDir.GetFile(path...)
 		if e != nil {
-			e = fmt.Errorf("Documentation for '%v' does not exist.\n", strings.Join(path, "/"))
+			e = fmt.Errorf("Documentation for '%v' does not exist.\n", "/"+strings.Join(path, "/"))
 		}
-		return
-	} else {
-		return readDir.String(), nil
+
 	}
+	return
 }

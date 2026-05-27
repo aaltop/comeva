@@ -1,6 +1,7 @@
 package help
 
 import (
+	"errors"
 	"flag"
 	"strings"
 )
@@ -37,8 +38,19 @@ type path []string
 func (p *path) String() string {
 	return strings.Join(*p, "/")
 }
-func (p *path) Set(flg string) (e error) {
-	*p = strings.Split(flg, "/")
 
+// Set takes a flag that is assumed to be a path starting with a slash,
+// with slash separated parts of the path, and potentially ending with a slash.
+// It sets in `p` the path split by the forward slash. Note that this leaves
+// an empty string at the start and end if these have a slash in the flag,
+// and for a single slash as the flag value, the result is a slice of two empty
+// strings.
+func (p *path) Set(flg string) (e error) {
+
+	if !(len(flg) > 0 && flg[0] == '/') {
+		return errors.New("Path should start with a forward slash (/).")
+	}
+
+	*p = strings.Split(flg, "/")
 	return
 }
