@@ -10,7 +10,7 @@ trailer section may also be empty, depending on the configuration.
 
 Generally, validation of commit messages is based on [Conventional Commits][1].
 The intention is that valid messages are valid Conventional Commits, but not
-all valid Conventional Commits are valid messages: validation is more stringent
+all valid Conventional Commits are necessarily valid messages: validation is more stringent
 in some places, such as requiring both a breaking change exclamation mark AND
 a breaking change trailer key. In contrast, Conventional Commits allows omitting one
 in the case of a breaking change, but does not prohibit both being specified at

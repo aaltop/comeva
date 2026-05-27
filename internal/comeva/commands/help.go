@@ -13,7 +13,7 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 	var usage = HelpMessageUsage{}
 	usage.AddExample(
 		fmt.Sprintf("%s", CommandNames.Help),
-		"Show the documentation structure. This represents a directory tree which the path flag should be based on, not including the <root>.",
+		"Show the documentation structure. This represents a directory tree which the path flag should be based on.",
 	)
 	usage.AddExample(
 		fmt.Sprintf("%s --path <path>", CommandNames.Help),

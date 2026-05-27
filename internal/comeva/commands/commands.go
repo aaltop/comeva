@@ -157,7 +157,7 @@ Usage:
 |
 %v
 
-Options:
+Arguments:
 |
 %v
 `, msg.synopsis, msg.description, ioUtils.IndentLinesWithString(msg.usage.String(), 1, "| "), ioUtils.IndentLinesWithString(msg.options.String(), 1, "| "))

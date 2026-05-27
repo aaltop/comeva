@@ -15,7 +15,7 @@ The trailer section of a commit message is of the following format (see
     further below.
     - configuration 
         - required keys
-            If specified, trailers with those keys must be found in the message.
+            - If specified, trailers with those keys must be found in the message.
         - optional keys
             - If specified, any key that isn't either in required keys or
             optional keys is not allowed.

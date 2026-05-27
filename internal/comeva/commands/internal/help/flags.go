@@ -29,7 +29,9 @@ func NewArgs() (arg *args, e error) {
 var pathFlag = make(path, 0)
 
 func init() {
-	FlagSet.Var(&pathFlag, string(flagNames.Path), "Path of help to show. Slash-separated without start or end slash.")
+	FlagSet.Var(&pathFlag, string(flagNames.Path),
+		`Path of help to show. Slash-separated with a slash at the beginning. Without a
+slash at the end, get a file; with a slash at the end, get a directory.`)
 }
 
 // path represents a slash-separated path.
