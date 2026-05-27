@@ -13,17 +13,27 @@ The trailer section of a commit message is of the following format (see
     - Key of the trailer. It starts the line and contains ascii letters separated
     possibly by dashes. A special case is the BREAKING-CHANGE key, discussed
     further below.
+    - configuration 
+        - required keys
+            If specified, trailers with those keys must be found in the message.
+        - optional keys
+            - If specified, any key that isn't either in required keys or
+            optional keys is not allowed.
 
 - value
     - The value of the trailer. Not particularly limited in what it can contain,
     though it must be non-empty. It can span multiple lines, but any lines
     after the first must be indented by a configurable number of spaces, and no
     line may be empty.
+    - configuration
+        - continuation indent
+            - Specifies how many spaces should be used to indent the continuation
+            lines of the value.
 
-The key and value are separated by a colon (:) and a single space.
-
-Multiple trailers may be specified, and keys may be repeated. The trailer section
-might also be empty depending on the configuration.
+The key and value are separated by a colon (:) and a single space. The length of
+any line of the trailer can be limited, being by default between 0 and 80
+characters. Multiple trailers may be specified, and keys may be repeated.
+The trailer section may also be empty depending on the configuration.
 
 ## Breaking change trailer
 
