@@ -98,19 +98,17 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[strin
 // based on `args`. `args` is expected to not have any preceding flags.
 func SplitCommandsAndFlags(args []string) (cmds []string, flgs []string) {
 
-	var idx int
 	var word string
-	for idx, word = range args {
-		if strings.HasPrefix(word, "-") {
-			break
+	var flagEncountered bool = false
+	for _, word = range args {
+		// could use indexing for faster assignments, but it's a little ugly
+		// in some cases, and this isn't a very perfomance critical thing
+		if flagEncountered || strings.HasPrefix(word, "-") {
+			flagEncountered = true
+			flgs = append(flgs, word)
+		} else {
+			cmds = append(cmds, word)
 		}
-	}
-
-	if idx+1 < len(args) {
-		cmds = args[:idx]
-		flgs = args[idx:]
-	} else {
-		cmds = args
 	}
 
 	return
