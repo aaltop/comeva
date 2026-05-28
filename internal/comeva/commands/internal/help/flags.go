@@ -1,13 +1,16 @@
 package help
 
 import (
+	flagUtils "comeva/internal/utils/flag"
 	"errors"
 	"flag"
 	"fmt"
 	"strings"
 )
 
-var FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+var FlagSet *flag.FlagSet
+var OptionalFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
+var OptionalBoolFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
 
 type FlagString string
 
@@ -37,15 +40,15 @@ var createDocsFlag docsRoot = docsRoot("./docs/")
 var pathFlag = make(path, 0)
 
 func init() {
-	FlagSet.Var(&createDocsFlag, string(flagNames.CreateDocs),
-		`Recreate the docs under the current directory in the passed `+"`path`"+` sub-directory.
-If passed with a non-default value, MUST be passed using the equals syntax,
-i.e. --create-docs=<path> instead of --create-docs <path>.`,
+	OptionalBoolFlagSet.Var(&createDocsFlag, string(flagNames.CreateDocs),
+		`Recreate the docs under the current directory in the passed `+"`path`"+` sub-directory.`,
 	)
 
-	FlagSet.Var(&pathFlag, string(flagNames.Path),
+	OptionalFlagSet.Var(&pathFlag, string(flagNames.Path),
 		`Path of help to show. Slash-separated with a slash at the beginning. Without a
 slash at the end, get a file; with a slash at the end, get a directory.`)
+
+	FlagSet = flagUtils.Combine(OptionalFlagSet, OptionalBoolFlagSet)
 }
 
 type docsRoot string

@@ -26,7 +26,8 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 	)
 
 	var options = newDefaultFlagOptions()
-	options.AddGroup("Other", flagUtils.GetDefaults(help.FlagSet))
+	options.AddGroup("Local", flagUtils.GetDefaults(help.OptionalFlagSet))
+	options.AddGroup("Local/Boolean", flagUtils.GetDefaults(help.OptionalBoolFlagSet))
 	helpMsg, e = NewHelpMessage(
 		"Access the documentation.",
 		"",
