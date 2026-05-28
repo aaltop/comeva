@@ -3,6 +3,7 @@ package help
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -11,27 +12,58 @@ var FlagSet = flag.NewFlagSet("", flag.ContinueOnError)
 type FlagString string
 
 var flagNames = struct {
-	Path FlagString
+	Path, CreateDocs FlagString
 }{
-	Path: "path",
+	Path:       "path",
+	CreateDocs: "create-docs",
 }
 
 type args struct {
-	Path []string
+	Path       []string
+	CreateDocs string
 }
 
 func NewArgs() (arg *args, e error) {
 	arg = &args{}
 	arg.Path = pathFlag
+	arg.CreateDocs = string(createDocsFlag)
 	return
 }
+
+// var createDocsFlag = FlagSet.String(string(flagNames.CreateDocs), "docs/", "Recreate the docs under the current directory in the passed sub-directory.")
+
+var createDocsFlag docsRoot = docsRoot("./docs/")
 
 var pathFlag = make(path, 0)
 
 func init() {
+	FlagSet.Var(&createDocsFlag, string(flagNames.CreateDocs),
+		`Recreate the docs under the current directory in the passed `+"`path`"+` sub-directory.
+If passed with a non-default value, MUST be passed using the equals syntax,
+i.e. --create-docs=<path> instead of --create-docs <path>.`,
+	)
+
 	FlagSet.Var(&pathFlag, string(flagNames.Path),
 		`Path of help to show. Slash-separated with a slash at the beginning. Without a
 slash at the end, get a file; with a slash at the end, get a directory.`)
+}
+
+type docsRoot string
+
+func (docs *docsRoot) String() string {
+	return fmt.Sprintf(`"%v"`, string(*docs))
+}
+
+func (docs *docsRoot) Set(flg string) (e error) {
+	if flg == "true" {
+		return
+	}
+	*docs = docsRoot(flg)
+	return
+}
+
+func (docs *docsRoot) IsBoolFlag() bool {
+	return true
 }
 
 // path represents a slash-separated path.

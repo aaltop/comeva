@@ -5,9 +5,14 @@ import (
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/docs"
 	exitstate "comeva/internal/exitState"
+	flagUtils "comeva/internal/utils/flag"
 	"fmt"
 	"strings"
 )
+
+type program struct {
+	Args *args
+}
 
 func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
 	extState = exitstate.NewDefaultExitState()
@@ -16,30 +21,48 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 	var arg *args
 	arg, _ = NewArgs()
 
-	if len(arg.Path) == 0 {
-		arg.Path = []string{"", ""}
-	}
+	var passedLocalFlags = flagUtils.PassedFlags(FlagSet)
 
-	var content string
-	if len(arg.Path) == 2 && arg.Path[0] == "" && arg.Path[1] == "" {
-		// get root
-		content, e = docs.Get()
-	} else {
-		content, e = docs.Get(arg.Path[1:]...)
-	}
-	if e != nil {
-		extState.Code = exitstate.PROGRAM_ERROR
-		extState.Reason = e
+	if passedLocalFlags[string(flagNames.CreateDocs)] {
+		e = docs.Create(arg.CreateDocs)
+		if e != nil {
+			extState.Code = exitstate.PROGRAM_ERROR
+			extState.Reason = fmt.Errorf("Error creating docs directory: %w", e)
+		}
 		return
 	}
 
-	var isFile = len(arg.Path) > 1 && arg.Path[len(arg.Path)-1] != ""
+	e = getDocsForPath(arg.Path...)
+	if e != nil {
+		extState.Code = exitstate.PROGRAM_ERROR
+		extState.Reason = e
+	}
+	return
+}
 
-	var path = strings.Join(arg.Path, "/")
-	if isFile {
-		fmt.Printf("\nDocumentation for '%v':\n", path)
+func getDocsForPath(path ...string) (e error) {
+	if len(path) == 0 {
+		path = []string{"", ""}
+	}
+
+	var content string
+	if len(path) == 2 && path[0] == "" && path[1] == "" {
+		// get root
+		content, e = docs.Get()
 	} else {
-		fmt.Printf("\nContents of '%v':\n", path)
+		content, e = docs.Get(path[1:]...)
+	}
+	if e != nil {
+		return
+	}
+
+	var isFile = len(path) > 1 && path[len(path)-1] != ""
+
+	var stringPath = strings.Join(path, "/")
+	if isFile {
+		fmt.Printf("\nDocumentation for '%v':\n", stringPath)
+	} else {
+		fmt.Printf("\nContents of '%v':\n", stringPath)
 	}
 	println(content)
 	return

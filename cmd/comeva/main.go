@@ -3,6 +3,7 @@ package main
 import (
 	"comeva/internal/comeva/args"
 	"comeva/internal/comeva/commands"
+	"comeva/internal/comeva/globals"
 	"comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
 	"fmt"
@@ -27,6 +28,7 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 	if sub != nil {
 		extState = sub.Execute(cmdArgs)
 	} else {
+		globals.ErrorLogger.Error().Printf("Sub-command '%v' not found.", cmdArgs.Commands)
 		fmt.Println(base.Help())
 	}
 	return

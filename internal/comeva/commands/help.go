@@ -20,10 +20,15 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 		`Get help on the given item specified by the path.`,
 	)
 
+	usage.AddExample(
+		fmt.Sprintf("%s --create-docs=<path>", CommandNames.Help),
+		"Recreate the entire documentation directory.",
+	)
+
 	var options = newDefaultFlagOptions()
 	options.AddGroup("Other", flagUtils.GetDefaults(help.FlagSet))
 	helpMsg, e = NewHelpMessage(
-		"Get help on a given item.",
+		"Access the documentation.",
 		"",
 		usage,
 		options,

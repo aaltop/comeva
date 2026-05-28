@@ -1,11 +1,13 @@
 package docs
 
 import (
+	"comeva/internal/comeva/globals"
 	"comeva/internal/utils/io"
 	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -190,14 +192,14 @@ func (dir *directory) DirectoriesString() string {
 var dir = newDefaultDirectory()
 
 func init() {
-	var direc = regexp.MustCompile(`docs/(?P<subdir>(?:.*?/)*.*\.md\z)`)
 
+	var subdirRegex = regexp.MustCompile(`docs/(?P<subdir>(?:.*?/)*.*\.md\z)`)
 	// map the embedded file system to dir
 	fs.WalkDir(docsFolder, "docs", func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() || !direc.MatchString(path) {
+		if d.IsDir() || !subdirRegex.MatchString(path) {
 			return nil
 		}
-		var cont = direc.ReplaceAllString(path, "$subdir")
+		var cont = subdirRegex.ReplaceAllString(path, "$subdir")
 		var splitPath = strings.Split(cont, ".")
 		var sepEntry = strings.Split(splitPath[0], "/")
 
@@ -245,5 +247,48 @@ func Get(path ...string) (content string, e error) {
 		}
 
 	}
+	return
+}
+
+var subdirRegex = regexp.MustCompile(`docs/(?P<subdir>.*)`)
+
+// Create creates the documentation at the given path. The path should
+// end in a forward slash.
+func Create(path string) (e error) {
+	if len(path) == 0 {
+		return errors.New("Path was empty")
+	}
+
+	if path[len(path)-1] != '/' {
+		return fmt.Errorf("Path should end in a forward slash, got '%v'", path)
+	}
+
+	e = os.MkdirAll(path, 0750)
+	if e != nil {
+		return
+	}
+
+	e = fs.WalkDir(docsFolder, "docs", func(_path string, d fs.DirEntry, err error) (e error) {
+
+		if !subdirRegex.MatchString(_path) {
+			return nil
+		}
+
+		var newPath = subdirRegex.ReplaceAllString(_path, fmt.Sprintf("%v$subdir", path))
+
+		if d.IsDir() {
+			globals.DebugLogger.Info().Printf("Creating directories '%v'\n", newPath)
+			e = os.MkdirAll(newPath, 0750)
+		} else {
+			globals.DebugLogger.Info().Printf("Creating docs file at '%v'\n", newPath)
+			var content []byte
+			content, e = docsFolder.ReadFile(_path)
+			if e != nil {
+				return
+			}
+			e = os.WriteFile(newPath, content, 0660)
+		}
+		return
+	})
 	return
 }

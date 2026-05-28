@@ -18,3 +18,6 @@ Some examples of paths:
 
 - `/commands/help`
     - shows this documentation.
+
+The documentation directory can also be recreated locally using the create-docs
+argument.
