@@ -214,7 +214,7 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 }
 
 // ValidateKey checks whether the key of a trailer is valid (is included in the
-// required or optional keys).
+// required or optional keys). Returns [InvalidKeyError] if `e` is non-nil.
 func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (e error) {
 
 	var keyError = InvalidKeyError{
@@ -280,8 +280,16 @@ func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bo
 
 // ValidateKeyValue validates a trailer key-value pair. A key-value pair does
 // not, by the validation definition used here, continue to another line.
+// The [Trailer] `t` will have empty strings for its values if a match is not
+// found.
 func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, e error) {
 	var errs []error
+
+	// keyValueRegex might encounter something with a correct key, but no value
+	// specified. In this case, it's going to report that it did not find
+	// a key-value pair, which is technically correct, but it might be nicer
+	// to hint that something that could be a key-value pair (the key was
+	// correct) was encountered.
 
 	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
 	if matches == nil {
@@ -372,7 +380,7 @@ func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
 	return
 }
 
-// ValidateScanner validates the content returned by the scanner. `scanner` is expected
+// ValidateScannerWithLine validates the content returned by the scanner. `scanner` is expected
 // to be a line-by-line scanner. `timesScanned` specifies
 // the number of times .Scan() has been called on `scanner`, representing the
 // line at which the the scanner is.
@@ -381,6 +389,8 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 	// empty the Trailers in case this function has been called previously
 	validator.Reset()
 
+	// CountingScanner, namely TimesScanned, is used to keep track of the line
+	// so the errors can report the correct line.
 	var scner = utils.CountingScanner{Scanner: scanner}
 	scner.TimesScanned = timesScanned
 	var errs []error
@@ -396,6 +406,7 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 		}
 
 		tempTrailer, keyValueError = validator.ValidateKeyValue(line, scner.TimesScanned)
+
 		if keyValueError == nil {
 			// valid key-value pair
 			trailer = tempTrailer
@@ -404,7 +415,7 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 			// invalid key-value pair
 
 			// might be continuation instead
-			if trailer.Key != "" {
+			if tempTrailer.Key == "" && trailer.Key != "" {
 				continuationError = validator.ValidateValueContinuation(line, scner.TimesScanned)
 				if continuationError == nil {
 					// is continuation, just add it to the value as-is

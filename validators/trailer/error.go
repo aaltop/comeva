@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// InvalidKeyError is returned when a non-required and non-optional but otherwise
+// valid key is encountered in the trailers.
 type InvalidKeyError struct {
 	validators.ValidatorError
 	Expected []string
@@ -16,6 +18,7 @@ func (e InvalidKeyError) Error() string {
 	return e.ErrorString(message)
 }
 
+// InvalidKeyValueError is returned when a key-value pair cannot be found.
 type InvalidKeyValueError struct {
 	validators.ValidatorError
 }
@@ -24,6 +27,8 @@ func (e InvalidKeyValueError) Error() string {
 	return e.ErrorString("No key-value pair found")
 }
 
+// InvalidValueContinuationError is returned when an expected value continuation
+// with a given indent cannot be found.
 type InvalidValueContinuationError struct {
 	validators.ValidatorError
 	Indent uint
@@ -34,6 +39,8 @@ func (e InvalidValueContinuationError) Error() string {
 	return e.ErrorString(message)
 }
 
+// MissingRequiredKeyError is returned when a required key is not found in the
+// trailer.
 type MissingRequiredKeyError struct {
 	validators.ValidatorError
 	Missing []string

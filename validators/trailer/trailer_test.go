@@ -106,19 +106,6 @@ func RunTestTrailer(f func(tr string) error, t *testing.T) {
 	RunTestValues(f, ValidTrailer(), InvalidTrailer(), t)
 }
 
-// The Validate method works.
-// func TestValidate(t *testing.T) {
-// 	var validator validators.ReaderValidator = FixtureValidator()
-
-// 	var validation = func(tr string) error {
-// 		var reader = strings.NewReader(tr)
-// 		return validator.Validate(reader)
-// 	}
-
-// 	RunTestTrailerBlock(validation, t)
-
-// }
-
 func TestValidateString(t *testing.T) {
 	var validator validators.StringValidator = FixtureValidator()
 
@@ -338,21 +325,63 @@ func TestValueParsedWithoutModification(t *testing.T) {
 func TestAttemptParseAll(t *testing.T) {
 	var validator = FixtureValidator()
 
-	var trailer = ValidKey()[0] + ": value that\n   too big indent\n" +
-		ValidKey()[1] + ": key-value pair\n  that is okay"
+	var invalid = ValidKey()[0] + ": value which has\n   too big an indent"
+	var valid = ValidKey()[1] + ": key-value pair\n  that is okay"
 
-	var e error = validator.ValidateString(trailer)
-	if e == nil {
-		t.Errorf("Invalid trailer\n%s\nwas found to be valid", trailer)
+	var trailers = []string{
+		valid + "\n" + invalid,
+
+		invalid + "\n" + valid,
 	}
 
-	if !errors.As(e, &InvalidValueContinuationError{}) {
-		t.Error("Expected a line continuation to be found invalid")
+	for i, trailer := range trailers {
+		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
+			var e error = validator.ValidateString(trailer)
+			if e == nil {
+				t.Errorf("Invalid trailer\n%s\nwas found to be valid", trailer)
+			}
+
+			if !errors.As(e, &InvalidValueContinuationError{}) {
+				t.Error("Expected a line continuation to be found invalid")
+			}
+
+			if len(validator.Trailers) != 2 {
+				t.Errorf("Expected validator to have processed 2 trailers, found %d", len(validator.Trailers))
+			}
+		})
 	}
 
-	if len(validator.Trailers) != 2 {
-		t.Errorf("Expected validator to have processed 2 trailers, found %d", len(validator.Trailers))
+}
+
+// When a non-required, non-optional key is encountered, the correct error is returned.
+func TestNonRequiredNonOptionalKey(t *testing.T) {
+	var validator = FixtureValidator()
+	var e error
+
+	var validKeyValues = make([]string, 0)
+	for _, k := range ValidKey()[:2] {
+		validKeyValues = append(validKeyValues, fmt.Sprintf("%v: I'm the value", k))
+		e = validator.optionalKeys.Set(k, "")
+		if e != nil {
+			t.Fatalf("Error when adding key '%v': %v", k, e)
+		}
 	}
+
+	var invalidKeyValue = fmt.Sprintf("%v: I'm the value", "A-Non-Required-Non-Optional-Key")
+	var invalidStart = invalidKeyValue + "\n" + strings.Join(validKeyValues, "\n")
+	var invalidMiddle = validKeyValues[0] + "\n" + invalidKeyValue + "\n" + validKeyValues[1]
+	var invalidEnd = strings.Join(validKeyValues, "\n") + "\n" + invalidKeyValue
+
+	for i, trailer := range []string{invalidStart, invalidMiddle, invalidEnd} {
+		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
+			e = validator.ValidateString(trailer)
+
+			if !errors.As(e, &InvalidKeyError{}) {
+				t.Errorf("Expected an InvalidKeyError in\n%v\ngot:\n%v", trailer, e)
+			}
+		})
+	}
+
 }
 
 // Using bounds with lower and upper both zero means no line length checks.
