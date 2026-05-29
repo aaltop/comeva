@@ -20,7 +20,7 @@ func FixtureValidator() *TrailerValidator {
 // ValidKey returns formatting-wise valid keys. Also see [InvalidKey].
 func ValidKey() []string {
 	return []string{
-		"BREAKING-CHANGE",
+		"this-key-is-fine",
 		"Dummy-Key",
 	}
 }
@@ -419,4 +419,16 @@ func TestSetContinuationIndentSetsRegex(t *testing.T) {
 	if received != expected {
 		t.Errorf("ContinuationRegexes did not match:\nExpected:\n%s\nReceived:\n%s", expected, received)
 	}
+}
+
+// The BREAKING-CHANGE trailer key is always valid as a key.
+func TestBreakingChangeAlwaysValid(t *testing.T) {
+	var validator = FixtureValidator()
+
+	validator.optionalKeys.Set("Some-Key", "")
+
+	RunTestValues(func(tr string) (e error) {
+		_, e = validator.ValidateKeyValue(tr, 0)
+		return
+	}, []string{"Some-Key: value", "BREAKING-CHANGE: value"}, []string{}, t)
 }

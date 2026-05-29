@@ -214,8 +214,12 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 }
 
 // ValidateKey checks whether the key of a trailer is valid (is included in the
-// required or optional keys). Returns [InvalidKeyError] if `e` is non-nil.
+// required or optional keys or is BREAKING-CHANGE). Returns [InvalidKeyError] if `e` is non-nil.
 func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (e error) {
+
+	if possibleKey == "BREAKING-CHANGE" {
+		return nil
+	}
 
 	var keyError = InvalidKeyError{
 		Expected: validator.GetKeys(),
