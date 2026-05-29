@@ -48,7 +48,6 @@ func (e InvalidLineLengthError) Error() string {
 type InvalidLineError struct {
 	ValidatorError
 	Reason string
-	Line   uint
 }
 
 func (e InvalidLineError) Error() string {

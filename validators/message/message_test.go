@@ -182,3 +182,20 @@ func TestTrailerChecksKeys(t *testing.T) {
 		t.Errorf(invalidString, messageNoTrailer2)
 	}
 }
+
+// An error should be returned when there is no empty line between
+// the body and trailer
+func TestNoGapBetweenBodyAndTrailer(t *testing.T) {
+	var validator = FixtureValidator()
+
+	var message = fmt.Sprintf("%v\n\n%v\n%v", "feat: Add commit", "A body\nwith a few lines", "Key: value")
+
+	var e error
+	if e = validator.ValidateString(message); e == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	if !strings.Contains(e.Error(), "before trailer block") {
+		t.Errorf("Unexpected error message: %v\n", e.Error())
+	}
+}

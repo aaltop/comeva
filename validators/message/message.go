@@ -159,12 +159,18 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	var line string = scner.Text()
 	// line after header should be a newline (\n or \r\n)
 	if line != "" {
-		errs = append(errs, validators.InvalidLineError{Reason: fmt.Sprintf("Expected empty newline after header, got %#v", line), Line: scner.TimesScanned})
+		errs = append(errs, validators.InvalidLineError{
+			Reason: fmt.Sprintf("Expected empty newline after header, got %#v", line),
+			ValidatorError: validators.ValidatorError{
+				Line: scner.TimesScanned,
+			}})
 	}
 
 	var bodyStart, trailerStart = -1, -1
 	var bodyContent, trailerContent []string
 
+	// assigned non-nil if no line precedes the trailer block.
+	var noEmptyBeforeTrailerError error = nil
 	// find assumed body/start of trailer
 	for scner.Scan() {
 		line = scner.Text()
@@ -173,6 +179,16 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 			trailerStart = int(scner.TimesScanned)
 			trailerContent = append(trailerContent, line)
 			validator.FoundTrailer = true
+			if len(bodyContent) > 0 {
+				if bodyContent[len(bodyContent)-1] != "" {
+					noEmptyBeforeTrailerError = validators.InvalidLineError{
+						Reason: fmt.Sprintf("Expected empty newline before trailer block, got %#v", line),
+						ValidatorError: validators.ValidatorError{
+							Line: scner.TimesScanned,
+						},
+					}
+				}
+			}
 			break
 		}
 
@@ -195,14 +211,14 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 		trailerContent = append(trailerContent, line)
 	}
 
-	// the scanner being passed here hasn't actually scanned the first line yet
-	// (bodyStart line), so actually pass the value one before that.
 	if e = validator.BodyValidator.ValidateStringWithLine(strings.Join(bodyContent, "\n"), uint(bodyStart)); e != nil {
 		errs = append(errs, e)
 	}
 
-	// the scanner being passed here hasn't actually scanned the first line yet
-	// (trailerStart line), so actually pass the value one before that.
+	if noEmptyBeforeTrailerError != nil {
+		errs = append(errs, noEmptyBeforeTrailerError)
+	}
+
 	if e = validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart)); e != nil {
 		errs = append(errs, e)
 	}
