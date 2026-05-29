@@ -55,3 +55,15 @@ func Panic2[T any](in T, e error) T {
 	Panic(e)
 	return in
 }
+
+// UnwrapAll returns the deeply unwrapped error.
+func UnwrapAll(wrappedError error) (errors []error) {
+	if unWrappable, ok := wrappedError.(interface{ Unwrap() []error }); ok {
+		for _, e := range unWrappable.Unwrap() {
+			errors = append(errors, UnwrapAll(e)...)
+		}
+	} else {
+		errors = append(errors, wrappedError)
+	}
+	return
+}

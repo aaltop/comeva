@@ -2,6 +2,7 @@ package errors
 
 import (
 	testingUtils "comeva/internal/testing"
+	"errors"
 	baseErrors "errors"
 	"testing"
 )
@@ -86,4 +87,26 @@ func TestPanic(t *testing.T) {
 		t.Error(testingUtils.ValueMismatch("string", "", receivedStr))
 	}
 
+}
+
+// Unwrapping all errors works.
+func TestUnwrapAllErrors(t *testing.T) {
+	var expected = []error{
+		errors.New("error 1"),
+		errors.New("error 2"),
+		errors.New("error 3"),
+	}
+	var wrappedError error = baseErrors.Join(baseErrors.Join(expected[0], expected[1]), expected[2])
+
+	var received []error = UnwrapAll(wrappedError)
+
+	if len(expected) != len(received) {
+		t.Fatalf("Expected same length\nExpected: %v\nReceived: %v\n", expected, received)
+	}
+
+	for i := range expected {
+		if expected[i] != received[i] {
+			t.Error(testingUtils.ValueMismatch("error", expected[i], received[i]))
+		}
+	}
 }
