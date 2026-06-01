@@ -75,6 +75,15 @@ type configYaml struct {
 	LoggingLevel        *int    `yaml:"loggingLevel"`
 }
 
+func CreateCommentMap(prefix string) goccyYaml.CommentMap {
+	return yaml.CreateCommentMap(prefix, yaml.SuffixCommentMap{
+		"validatorConfigFile": {" path to the config of the validator"},
+		"commitFile":          {" path to the commit message file"},
+		"verbosity":           {" default verbosity to use"},
+		"loggingLevel":        {" default logging level to use"},
+	})
+}
+
 func (config *Config) UnmarshalYAML(data []byte) (e error) {
 	var temp configYaml
 	if e = goccyYaml.Unmarshal(data, &temp); e == nil {
@@ -86,6 +95,8 @@ func (config *Config) UnmarshalYAML(data []byte) (e error) {
 	return
 }
 
+var comments = CreateCommentMap("")
+
 func (config *Config) MarshalYAML() (data []byte, e error) {
 	var temp configYaml
 	temp.CommitFile = config.CommitFile
@@ -93,7 +104,7 @@ func (config *Config) MarshalYAML() (data []byte, e error) {
 	temp.Verbosity = config.Verbosity
 	temp.LoggingLevel = config.LoggingLevel
 
-	return goccyYaml.Marshal(&temp)
+	return goccyYaml.MarshalWithOptions(&temp, goccyYaml.WithComment(comments))
 }
 
 // UnmarshalYAMLFile unmarshals the [Config] from the file.
