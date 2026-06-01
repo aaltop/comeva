@@ -1,12 +1,31 @@
 package trailer
 
-import "github.com/goccy/go-yaml"
+import (
+	"github.com/goccy/go-yaml"
+
+	yml "comeva/internal/yaml"
+)
 
 type trailerValidator struct {
 	RequiredKeys       []Key   `yaml:"requiredKeys"`
 	OptionalKeys       []Key   `yaml:"optionalKeys"`
 	ContinuationIndent uint    `yaml:"continuationIndent"`
 	LineLength         [2]uint `yaml:"lineLength"`
+}
+
+// see [yml.CreateCommentMap].
+func CreateCommentMap(prefix string) yaml.CommentMap {
+
+	return yml.CreateCommentMap(prefix, yml.SuffixCommentMap{
+		"requiredKeys": {" keys that have to exist in the trailer"},
+		"optionalKeys": {
+			" Keys that are optional.",
+			" If specified, any key must match either these or requiredKeys.",
+		},
+		"continuationIndent": {" how many spaces to require a trailer's value to be indented by"},
+		"lineLength":         {" minimum and maximum for line length, all zeroes means no set limit"},
+	})
+
 }
 
 func (validator *TrailerValidator) UnmarshalYAML(data []byte) (e error) {
@@ -35,6 +54,8 @@ func (validator *TrailerValidator) UnmarshalYAML(data []byte) (e error) {
 	return e
 }
 
+var comments = CreateCommentMap("")
+
 func (validator *TrailerValidator) MarshalYAML() (data []byte, e error) {
 	var temp trailerValidator
 
@@ -49,5 +70,5 @@ func (validator *TrailerValidator) MarshalYAML() (data []byte, e error) {
 	temp.ContinuationIndent = validator.continuationIndent
 	temp.LineLength = [2]uint{validator.lineLength.Lower, validator.lineLength.Upper}
 
-	return yaml.Marshal(&temp)
+	return yaml.MarshalWithOptions(&temp, yaml.WithComment(comments))
 }

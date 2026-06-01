@@ -1,6 +1,8 @@
 package validators
 
-import "io"
+import (
+	"io"
+)
 
 type Validator[T any] interface {
 	// Validate validates the passed value, returning an error which

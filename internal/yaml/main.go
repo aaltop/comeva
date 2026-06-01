@@ -1,6 +1,7 @@
 package yaml
 
 import (
+	"fmt"
 	"os"
 
 	goccyYaml "github.com/goccy/go-yaml"
@@ -18,4 +19,25 @@ func UnMarshalFromFile(filename string, um BytesUnmarshaler) (e error) {
 	}
 	e = um.UnmarshalYAML(data)
 	return
+}
+
+type SuffixCommentMap = map[string][]string
+
+// CreateCommentMap creates a [goccyYaml.CommentMap]. `prefix` is a prefix
+// for a YAML path, while `comments` consists of YAML path suffixes as keys and
+// head comment lines as values.
+//
+// The `prefix` and suffixes of `comments` will be parsed as "$%s.%s".
+func CreateCommentMap(prefix string, comments SuffixCommentMap) goccyYaml.CommentMap {
+	var getKey = func(suffix string) string {
+		return fmt.Sprintf("$%s.%s", prefix, suffix)
+	}
+
+	var commentMap = make(goccyYaml.CommentMap, 0)
+	for key, value := range comments {
+		commentMap[getKey(key)] = []*goccyYaml.Comment{
+			goccyYaml.HeadComment(value...),
+		}
+	}
+	return commentMap
 }

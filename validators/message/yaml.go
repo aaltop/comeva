@@ -4,8 +4,11 @@ import (
 	"comeva/validators/body"
 	"comeva/validators/header"
 	"comeva/validators/trailer"
+	"maps"
 
 	"github.com/goccy/go-yaml"
+
+	yml "comeva/internal/yaml"
 )
 
 type messageValidator struct {
@@ -37,11 +40,27 @@ func (validator *MessageValidator) UnmarshalYAML(data []byte) (e error) {
 	return
 }
 
+var headerComments = header.CreateCommentMap(".header")
+var bodyComments = body.CreateCommentMap(".body")
+var trailerComments = trailer.CreateCommentMap(".trailer")
+
 func (validator *MessageValidator) MarshalYAML() (data []byte, e error) {
 	var temp messageValidator
 	temp.HeaderValidator = validator.HeaderValidator
 	temp.BodyValidator = validator.BodyValidator
 	temp.TrailerValidator = validator.TrailerValidator
 
-	return yaml.Marshal(&temp)
+	var comments = yml.CreateCommentMap("", yml.SuffixCommentMap{
+		"header":  {" the header spans the first line of the message"},
+		"body":    {" the body is between the header and the trailer"},
+		"trailer": {" the trailer block is at the end of the message"},
+	})
+
+	maps.Copy(comments, headerComments)
+	maps.Copy(comments, bodyComments)
+	maps.Copy(comments, trailerComments)
+	return yaml.MarshalWithOptions(
+		&temp,
+		yaml.WithComment(comments),
+	)
 }
