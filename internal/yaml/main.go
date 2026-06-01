@@ -41,3 +41,19 @@ func CreateCommentMap(prefix string, comments SuffixCommentMap) goccyYaml.Commen
 	}
 	return commentMap
 }
+
+var defaultMarshalOptions = []goccyYaml.EncodeOption{
+	goccyYaml.IndentSequence(true),
+}
+
+// Marshal matches [goccyYaml.Marshal] but with default encoding options.
+func Marshal(v any) ([]byte, error) {
+	return goccyYaml.MarshalWithOptions(&v, defaultMarshalOptions...)
+}
+
+// MarshalWithOptions wraps [goccyYaml.MarshalWithOptions], setting some
+// default EncodeOptions.
+func MarshalWithOptions(v any, opts ...goccyYaml.EncodeOption) ([]byte, error) {
+	var options = append(defaultMarshalOptions, opts...)
+	return goccyYaml.MarshalWithOptions(&v, options...)
+}

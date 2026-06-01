@@ -1,9 +1,9 @@
 package header
 
 import (
-	"github.com/goccy/go-yaml"
+	goccyYaml "github.com/goccy/go-yaml"
 
-	yml "comeva/internal/yaml"
+	"comeva/internal/yaml"
 )
 
 type headerValidator struct {
@@ -11,10 +11,10 @@ type headerValidator struct {
 	LineLength           [2]uint `yaml:"lineLength"`
 }
 
-// see [yml.CreateCommentMap].
-func CreateCommentMap(prefix string) yaml.CommentMap {
+// see [yaml.CreateCommentMap].
+func CreateCommentMap(prefix string) goccyYaml.CommentMap {
 
-	return yml.CreateCommentMap(prefix, yml.SuffixCommentMap{
+	return yaml.CreateCommentMap(prefix, yaml.SuffixCommentMap{
 		"types":      {" type according to conventional commits"},
 		"scopes":     {" scope according to conventional commits"},
 		"verbs":      {" imperative mood verb that begins the message of a header"},
@@ -24,7 +24,7 @@ func CreateCommentMap(prefix string) yaml.CommentMap {
 
 func (validator *HeaderValidator) UnmarshalYAML(data []byte) (e error) {
 	var hv headerValidator
-	if e = yaml.Unmarshal(data, &hv); e == nil {
+	if e = goccyYaml.Unmarshal(data, &hv); e == nil {
 		var new *HeaderValidator
 		new, e = NewHeaderValidator(
 			hv.Types, hv.Scopes, hv.Verbs, hv.LineLength,
@@ -43,5 +43,5 @@ func (validator *HeaderValidator) MarshalYAML() (data []byte, e error) {
 	temp.Verbs = validator.verbs
 	temp.LineLength = [2]uint{validator.lineLength.Lower, validator.lineLength.Upper}
 
-	return yaml.MarshalWithOptions(&temp, yaml.WithComment(comments))
+	return yaml.MarshalWithOptions(&temp, goccyYaml.WithComment(comments))
 }

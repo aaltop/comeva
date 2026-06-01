@@ -104,7 +104,7 @@ func (config *Config) MarshalYAML() (data []byte, e error) {
 	temp.Verbosity = config.Verbosity
 	temp.LoggingLevel = config.LoggingLevel
 
-	return goccyYaml.MarshalWithOptions(&temp, goccyYaml.WithComment(comments))
+	return yaml.MarshalWithOptions(&temp, goccyYaml.WithComment(comments))
 }
 
 // UnmarshalYAMLFile unmarshals the [Config] from the file.

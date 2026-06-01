@@ -6,9 +6,9 @@ import (
 	"comeva/validators/trailer"
 	"maps"
 
-	"github.com/goccy/go-yaml"
+	goccyYaml "github.com/goccy/go-yaml"
 
-	yml "comeva/internal/yaml"
+	"comeva/internal/yaml"
 )
 
 type messageValidator struct {
@@ -19,7 +19,7 @@ type messageValidator struct {
 
 func (validator *MessageValidator) UnmarshalYAML(data []byte) (e error) {
 	var temp messageValidator
-	if e = yaml.Unmarshal(data, &temp); e == nil {
+	if e = goccyYaml.Unmarshal(data, &temp); e == nil {
 		var new *MessageValidator = NewDefaultMessageValidator()
 
 		// Maybe would be easier to have the sub-validators be by value?
@@ -50,7 +50,7 @@ func (validator *MessageValidator) MarshalYAML() (data []byte, e error) {
 	temp.BodyValidator = validator.BodyValidator
 	temp.TrailerValidator = validator.TrailerValidator
 
-	var comments = yml.CreateCommentMap("", yml.SuffixCommentMap{
+	var comments = yaml.CreateCommentMap("", yaml.SuffixCommentMap{
 		"header":  {" the header spans the first line of the message"},
 		"body":    {" the body is between the header and the trailer"},
 		"trailer": {" the trailer block is at the end of the message"},
@@ -61,6 +61,6 @@ func (validator *MessageValidator) MarshalYAML() (data []byte, e error) {
 	maps.Copy(comments, trailerComments)
 	return yaml.MarshalWithOptions(
 		&temp,
-		yaml.WithComment(comments),
+		goccyYaml.WithComment(comments),
 	)
 }
