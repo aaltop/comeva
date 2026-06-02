@@ -29,6 +29,10 @@ func (validator *MessageValidator) Reset() {
 	validator.HeaderValidator.Reset()
 	validator.BodyValidator.Reset()
 	validator.TrailerValidator.Reset()
+
+	validator.FoundHeader = false
+	validator.FoundBody = false
+	validator.FoundTrailer = false
 }
 
 // NewDefaultMessageValidator creates the base MessageValidator.

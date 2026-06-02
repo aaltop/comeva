@@ -200,3 +200,23 @@ func TestNoGapBetweenBodyAndTrailer(t *testing.T) {
 		t.Errorf("Unexpected error message: %v\n", e.Error())
 	}
 }
+
+func TestReset(t *testing.T) {
+	var validator = FixtureValidator()
+
+	if validator.FoundHeader || validator.FoundBody || validator.FoundTrailer {
+		t.Fatalf("None of Found* should be true, had header: %v, body: %v, trailer: %v",
+			validator.FoundHeader, validator.FoundBody, validator.FoundTrailer)
+	}
+
+	validator.FoundHeader = true
+	validator.FoundBody = true
+	validator.FoundTrailer = true
+
+	validator.Reset()
+
+	if validator.FoundHeader || validator.FoundBody || validator.FoundTrailer {
+		t.Fatalf("None of Found* should be true, had header: %v, body: %v, trailer: %v",
+			validator.FoundHeader, validator.FoundBody, validator.FoundTrailer)
+	}
+}
