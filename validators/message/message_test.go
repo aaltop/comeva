@@ -2,12 +2,16 @@ package message
 
 import (
 	"comeva/validators"
+	"comeva/validators/header"
 	"comeva/validators/trailer"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
+
+	errs "comeva/internal/errors"
+	testingUtils "comeva/internal/testing"
 )
 
 func FixtureValidator() *MessageValidator {
@@ -39,6 +43,15 @@ func CreateMessage(header, body, trailer string) string {
 func ValidMessage() []string {
 	return []string{
 		CreateMessage(ValidHeader()[0], ValidBody()[0], ValidTrailerBlock()[0]),
+	}
+}
+
+func InvalidMessage() []string {
+	return []string{
+		CreateMessage("fea!: I'm header",
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"Gappy Key:Too close value",
+		),
 	}
 }
 
@@ -212,11 +225,44 @@ func TestReset(t *testing.T) {
 	validator.FoundHeader = true
 	validator.FoundBody = true
 	validator.FoundTrailer = true
+	validator.Errors = append(validator.Errors, errors.New("error"))
 
 	validator.Reset()
 
 	if validator.FoundHeader || validator.FoundBody || validator.FoundTrailer {
-		t.Fatalf("None of Found* should be true, had header: %v, body: %v, trailer: %v",
+		t.Errorf("None of Found* should be true, had header: %v, body: %v, trailer: %v",
 			validator.FoundHeader, validator.FoundBody, validator.FoundTrailer)
+	}
+
+	if len(validator.Errors) != 0 {
+		t.Errorf("Errors should not contain any errors after reset")
+	}
+}
+
+// The count of errors received from the validator and the errors set in the
+// validator and its subvalidators match.
+func TestErrorCountMatches(t *testing.T) {
+	for i, message := range InvalidMessage() {
+		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
+			var validator = FixtureValidator()
+
+			validator.HeaderValidator = header.NewHeaderValidatorWithDefaults()
+
+			var returnedErrors = errs.UnwrapAll(validator.ValidateString(message))
+			var containedErrors = validator.AllErrors()
+			var returnedErrorsCount = len(returnedErrors)
+			var containedErrorsCount = len(containedErrors)
+
+			if returnedErrorsCount == 0 {
+				t.Error("Should return at least one error")
+			}
+
+			if returnedErrorsCount != containedErrorsCount {
+				fmt.Printf("returned errors: %v\n", returnedErrors)
+				fmt.Printf("contained errors: %v\n", containedErrors)
+				t.Error(testingUtils.ValueMismatch("error count", returnedErrorsCount, containedErrorsCount))
+			}
+
+		})
 	}
 }

@@ -68,6 +68,8 @@ type TrailerValidator struct {
 	continuationIndent uint
 	lineLength         utils.Bounds[uint]
 
+	Errors []error
+
 	Trailers []Trailer
 }
 
@@ -149,6 +151,7 @@ func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
 // Reset resets any content set during validation.
 func (validator *TrailerValidator) Reset() {
 	validator.Trailers = []Trailer{}
+	validator.Errors = make([]error, 0)
 }
 
 // newContinuationRegex creates a new continuationRegex for TrailerValidator
@@ -403,6 +406,11 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 	scner.TimesScanned = timesScanned
 	var errs []error
 
+	defer func() {
+		validator.Errors = errs
+		e = errors.Join(errs...)
+	}()
+
 	var trailer Trailer = Trailer{}
 	var keyValueError, continuationError error
 	for scner.Scan() {
@@ -454,8 +462,5 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 		errs = append(errs, e)
 	}
 
-	if len(errs) > 0 {
-		e = errors.Join(errs...)
-	}
-	return e
+	return
 }

@@ -1,12 +1,15 @@
 package body
 
 import (
+	testingUtils "comeva/internal/testing"
 	"comeva/internal/utils"
 	"comeva/validators"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
+
+	errs "comeva/internal/errors"
 )
 
 func FixtureValidator() *BodyValidator {
@@ -134,5 +137,28 @@ func TestSetBodySetInValidator(t *testing.T) {
 
 	if slices.Compare(body, validator.Body) != 0 {
 		t.Errorf("Body mismatch:\nExpected:\n%s\nReceived:\n%s\n", body, validator.Body)
+	}
+}
+
+// The count of errors received from the validator and the errors set in the
+// validator match.
+func TestErrorCountMatches(t *testing.T) {
+
+	for i, trailer := range InvalidBody() {
+		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
+			var validator = FixtureValidator()
+
+			var returnedErrors = errs.UnwrapAll(validator.ValidateString(trailer))
+			var returnedErrorsCount = len(returnedErrors)
+
+			if returnedErrorsCount == 0 {
+				t.Fatal("Should return at least one error")
+			}
+
+			var containedErrorsCount = len(validator.Errors)
+			if containedErrorsCount != returnedErrorsCount {
+				t.Error(testingUtils.ValueMismatch("error count", returnedErrorsCount, containedErrorsCount))
+			}
+		})
 	}
 }

@@ -21,6 +21,10 @@ type MessageValidator struct {
 	BodyValidator    *body.BodyValidator
 	TrailerValidator *trailer.TrailerValidator
 
+	// Errors contains any errors particular to the MessageValidator itself;
+	// sub-validator-specific errors are found in the relevant sub-validator.
+	Errors []error
+
 	FoundHeader, FoundBody, FoundTrailer bool
 }
 
@@ -33,6 +37,8 @@ func (validator *MessageValidator) Reset() {
 	validator.FoundHeader = false
 	validator.FoundBody = false
 	validator.FoundTrailer = false
+
+	validator.Errors = make([]error, 0)
 }
 
 // NewDefaultMessageValidator creates the base MessageValidator.
@@ -81,6 +87,16 @@ func (validator *MessageValidator) Equal(other *MessageValidator) bool {
 		validator.TrailerValidator.Equal(other.TrailerValidator)
 }
 
+// AllErrors returns all the validation errors encountered by the validator
+// and its subvalidators.
+func (validator *MessageValidator) AllErrors() (errs []error) {
+	errs = append(errs, validator.Errors...)
+	errs = append(errs, validator.HeaderValidator.Errors...)
+	errs = append(errs, validator.BodyValidator.Errors...)
+	errs = append(errs, validator.TrailerValidator.Errors...)
+	return
+}
+
 func (validator *MessageValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }
@@ -125,12 +141,20 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	var scner = utils.CountingScanner{Scanner: scanner}
 	var errs []error
 
+	defer func() {
+		e = errors.Join(errs...)
+	}()
+
 	if !scner.Scan() {
-		return UnexpectedEOFError{
+		e = UnexpectedEOFError{
 			ValidatorError: validators.ValidatorError{
 				Line: scner.TimesScanned,
 			},
 		}
+		// MessageValidator-specific errors should be put here as well
+		validator.Errors = append(validator.Errors, e)
+		errs = append(errs, e)
+		return
 	}
 
 	var possibleHeader string = scner.Text()
@@ -154,20 +178,19 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 			errs = append(errs, e)
 		}
 
-		if len(errs) > 0 {
-			e = errors.Join(errs...)
-		}
 		return
 	}
 
 	var line string = scner.Text()
 	// line after header should be a newline (\n or \r\n)
 	if line != "" {
-		errs = append(errs, validators.InvalidLineError{
+		e = validators.InvalidLineError{
 			Reason: fmt.Sprintf("Expected empty newline after header, got %#v", line),
 			ValidatorError: validators.ValidatorError{
 				Line: scner.TimesScanned,
-			}})
+			}}
+		validator.Errors = append(validator.Errors, e)
+		errs = append(errs, e)
 	}
 
 	var bodyStart, trailerStart = -1, -1
@@ -220,6 +243,7 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	}
 
 	if noEmptyBeforeTrailerError != nil {
+		validator.Errors = append(validator.Errors, noEmptyBeforeTrailerError)
 		errs = append(errs, noEmptyBeforeTrailerError)
 	}
 
@@ -228,11 +252,8 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	}
 
 	if e = validator.ValidateBreakingChange(); e != nil {
+		validator.Errors = append(validator.Errors, e)
 		errs = append(errs, e)
-	}
-
-	if len(errs) > 0 {
-		e = errors.Join(errs...)
 	}
 
 	return

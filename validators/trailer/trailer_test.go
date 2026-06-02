@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	errs "comeva/internal/errors"
+	testingUtils "comeva/internal/testing"
 )
 
 func FixtureValidator() *TrailerValidator {
@@ -431,4 +434,27 @@ func TestBreakingChangeAlwaysValid(t *testing.T) {
 		_, e = validator.ValidateKeyValue(tr, 0)
 		return
 	}, []string{"Some-Key: value", "BREAKING-CHANGE: value"}, []string{}, t)
+}
+
+// The count of errors received from the validator and the errors set in the
+// validator match.
+func TestErrorCountMatches(t *testing.T) {
+
+	for i, trailer := range InvalidTrailerBlock() {
+		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
+			var validator = FixtureValidator()
+
+			var returnedErrors = errs.UnwrapAll(validator.ValidateString(trailer))
+			var returnedErrorsCount = len(returnedErrors)
+
+			if returnedErrorsCount == 0 {
+				t.Fatal("Should return at least one error")
+			}
+
+			var containedErrorsCount = len(validator.Errors)
+			if containedErrorsCount != returnedErrorsCount {
+				t.Error(testingUtils.ValueMismatch("error count", returnedErrorsCount, containedErrorsCount))
+			}
+		})
+	}
 }

@@ -77,6 +77,8 @@ type HeaderValidator struct {
 	// Minimum and maximum.
 	lineLength utils.Bounds[uint]
 
+	Errors []error
+
 	// The content of the header in an easy accessible format.
 	Header Header
 }
@@ -111,6 +113,7 @@ func (validator *HeaderValidator) SetLineLength(min, max uint) (e error) {
 // Reset resets any content set during validation.
 func (validator *HeaderValidator) Reset() {
 	validator.Header = Header{}
+	validator.Errors = make([]error, 0)
 }
 
 // NewDefaultHeaderValidator creates the base [HeaderValidator].
@@ -323,14 +326,22 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 	validator.Reset()
 	var errs []error
 
+	defer func() {
+		validator.Errors = errs
+		e = errors.Join(errs...)
+	}()
+
 	var matches = validator.header.FindStringSubmatch(possibleHeader)
 	if matches == nil {
-		return InvalidError{
+
+		e = InvalidError{
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Header,
 				Line:        1,
 			},
 		}
+		errs = append(errs, e)
+		return
 	}
 
 	if err := validator.ValidateLength(possibleHeader); err != nil {
@@ -350,24 +361,18 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 	// scope is assumed to be at least one character, so empty scopes
 	// mean that the content was matched correctly but that the scope group
 	// did not exist, which is fine
-	if err := validator.ValidateScope(scope); scope != "" && err != nil {
-		errs = append(errs, err)
+	if e = validator.ValidateScope(scope); scope != "" && e != nil {
+		errs = append(errs, e)
 	}
 	validator.Header.Scope = scope
 
 	var desc = matches[validator.header.SubexpIndex("description")]
 	var description Description
-	var err error
-	description, err = validator.ValidateDescription(desc)
-	if err != nil {
-		errs = append(errs, err)
+	description, e = validator.ValidateDescription(desc)
+	if e != nil {
+		errs = append(errs, e)
 	}
 	validator.Header.Description = description
 
-	if len(errs) == 0 {
-		e = nil
-	} else {
-		e = errors.Join(errs...)
-	}
-	return e
+	return
 }
