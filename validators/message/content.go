@@ -1,6 +1,7 @@
 package message
 
 import (
+	"comeva/validators/body"
 	"comeva/validators/header"
 	"comeva/validators/trailer"
 )
@@ -8,7 +9,7 @@ import (
 // Message represents the commit message.
 type Message struct {
 	Header  header.Header
-	Body    string
+	Body    body.Body
 	Trailer []trailer.Trailer
 }
 

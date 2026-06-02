@@ -58,8 +58,8 @@ body:
 
 	var received = validator.BodyValidator
 
-	if *expected != *received {
-		t.Error(errorMsgFmt(*expected, received))
+	if !expected.Equal(received) {
+		t.Error(errorMsgFmt(*expected, *received))
 	}
 }
 

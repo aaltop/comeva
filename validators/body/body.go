@@ -11,23 +11,35 @@ import (
 	"strings"
 )
 
+type Body []string
+
 // BodyValidator validates a commit message's body.
 type BodyValidator struct {
 	// lineLength describes the lower and upper bound of a line's length.
 	lineLength utils.Bounds[uint]
 
 	// Body contains the body.
-	Body string
+	Body Body
 }
 
 // Reset resets any content set during validation.
 func (validator *BodyValidator) Reset() {
-	validator.Body = ""
+	validator.Body = make([]string, 0)
 }
 
 // NewDefaultBodyValidator creates the base BodyValidator.
 func NewDefaultBodyValidator() (validator *BodyValidator) {
-	return &BodyValidator{}
+	var e error
+	validator = &BodyValidator{}
+	var bounds utils.Bounds[uint]
+	bounds, e = utils.NewBounds(uint(0), uint(0), false, false)
+
+	if e != nil {
+		return
+	}
+	validator.lineLength = bounds
+	validator.Body = make([]string, 0)
+	return
 }
 
 // NewBodyValidator returns a new BodyValidator, returning a non-nil error
@@ -37,9 +49,16 @@ func NewDefaultBodyValidator() (validator *BodyValidator) {
 // and upper bound for a single line's length, where [0,0] means
 // that all values for line lengths are accepted.
 func NewBodyValidator(lineLength [2]uint) (validator *BodyValidator, e error) {
-	e = nil
-	bounds, e := utils.NewBounds(lineLength[0], lineLength[1], false, false)
-	return &BodyValidator{lineLength: bounds}, e
+	validator = NewDefaultBodyValidator()
+	var bounds utils.Bounds[uint]
+	bounds, e = utils.NewBounds(lineLength[0], lineLength[1], false, false)
+
+	if e != nil {
+		return
+	}
+
+	validator.lineLength = bounds
+	return
 }
 
 // NewBodyValidatorWithDefaults returns a [BodyValidator] with default values.
@@ -61,7 +80,7 @@ func (validator *BodyValidator) Equal(other *BodyValidator) bool {
 	return validator.lineLength.Equal(other.lineLength)
 }
 
-func (validator *BodyValidator) ValidatedContent() string {
+func (validator *BodyValidator) ValidatedContent() Body {
 	return validator.Body
 }
 
@@ -176,7 +195,7 @@ func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, 
 			line = scner.Text()
 		}
 	}
-	validator.Body = strings.Join(body, "\n")
+	validator.Body = body
 
 	if len(errs) > 0 {
 		e = errors.Join(errs...)

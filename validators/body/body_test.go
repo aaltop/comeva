@@ -4,6 +4,7 @@ import (
 	"comeva/internal/utils"
 	"comeva/validators"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -125,12 +126,13 @@ func TestValidateLine(t *testing.T) {
 func TestSetBodySetInValidator(t *testing.T) {
 	var validator = FixtureValidator()
 
-	var body string = ValidBody()[0]
-	if e := validator.ValidateString(body); e != nil {
+	var bodyString = ValidBody()[0]
+	var body []string = strings.Split(bodyString, "\n")
+	if e := validator.ValidateString(bodyString); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
 
-	if body != validator.Body {
+	if slices.Compare(body, validator.Body) != 0 {
 		t.Errorf("Body mismatch:\nExpected:\n%s\nReceived:\n%s\n", body, validator.Body)
 	}
 }

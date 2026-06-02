@@ -5,6 +5,7 @@ import (
 	"comeva/validators/trailer"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -71,8 +72,8 @@ func TestFindParts(t *testing.T) {
 		t.Error(newExpectedErrorString("Header", header, receivedHeader))
 	}
 
-	var receivedBody string = validator.BodyValidator.Body
-	if body != receivedBody {
+	var receivedBody []string = validator.BodyValidator.Body
+	if slices.Compare(strings.Split(body, "\n"), receivedBody) != 0 {
 		t.Error(newExpectedErrorString("Body", body, receivedHeader))
 	}
 
