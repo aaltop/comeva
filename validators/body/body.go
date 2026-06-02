@@ -61,6 +61,10 @@ func (validator *BodyValidator) Equal(other *BodyValidator) bool {
 	return validator.lineLength.Equal(other.lineLength)
 }
 
+func (validator *BodyValidator) ValidatedContent() string {
+	return validator.Body
+}
+
 // ValidateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
 func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error) {

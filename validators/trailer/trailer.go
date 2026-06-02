@@ -182,6 +182,10 @@ func (validator *TrailerValidator) SetContinuationIndent(indent uint) (e error) 
 	return e
 }
 
+func (validator *TrailerValidator) ValidatedContent() []Trailer {
+	return validator.Trailers
+}
+
 func (validator *TrailerValidator) Validate(reader io.Reader) (e error) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }

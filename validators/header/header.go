@@ -19,9 +19,9 @@ const typeRegex = `(?<type>.+?)`
 // scope is optional, surrounded by parentheses
 const scope = `(?:\((?<scope>.+)\))?`
 
-// header can be used to for checking for valid commit message
+// headerRegex can be used to for checking for valid commit message
 // headers.
-var header = regexp.MustCompile(fmt.Sprintf(`\A%s%s(?<breaking>!)?: (?<description>.+)\z`, typeRegex, scope))
+var headerRegex = regexp.MustCompile(fmt.Sprintf(`\A%s%s(?<breaking>!)?: (?<description>.+)\z`, typeRegex, scope))
 
 // Description represents the description part of a commit message
 type Description struct {
@@ -46,8 +46,7 @@ type Header struct {
 	Type string
 	// Scope denotes where the changes were made.
 	Scope string
-	// Breaking denotes whether the header marks the commit as a
-	// breaking change
+	// Breaking reports whether the header marks the commit as a breaking change.
 	Breaking bool
 	// Description contains the message (<verb> <content>) of the header.
 	Description Description
@@ -117,7 +116,7 @@ func (validator *HeaderValidator) Reset() {
 // NewDefaultHeaderValidator creates the base [HeaderValidator].
 func NewDefaultHeaderValidator() (h *HeaderValidator) {
 	h = &HeaderValidator{}
-	h.header = header
+	h.header = headerRegex
 	return
 }
 
@@ -128,7 +127,7 @@ func NewDefaultHeaderValidator() (h *HeaderValidator) {
 func NewHeaderValidator(types, scopes, verbs []string, lineLength [2]uint) (h *HeaderValidator, e error) {
 	h = &HeaderValidator{}
 
-	h.header = header
+	h.header = headerRegex
 	slices.Sort(types)
 	h.types = types
 	slices.Sort(scopes)
@@ -183,6 +182,10 @@ func (validator *HeaderValidator) Help() string {
 		fmt.Sprintf("	<verb>: (%s)\n", verb) +
 		fmt.Sprintln("	<content>: Any content") +
 		fmt.Sprintf("	minimum and maximum length: %v\n", validator.lineLength)
+}
+
+func (validator *HeaderValidator) ValidatedContent() *Header {
+	return &validator.Header
 }
 
 // Validate validates the header of a commit message, returning

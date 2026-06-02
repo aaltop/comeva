@@ -20,7 +20,6 @@ type ReaderValidator interface {
 }
 
 type StringValidator interface {
-	ReaderValidator
 
 	// Validate a string, returning an error which is nil if no validation
 	// issues were found.
