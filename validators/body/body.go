@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"comeva/internal/utils"
 	"comeva/validators"
-	"errors"
 	"io"
 	"strings"
 )
@@ -18,7 +17,7 @@ type BodyValidator struct {
 	// lineLength describes the lower and upper bound of a line's length.
 	lineLength utils.Bounds[uint]
 
-	Errors []error
+	Errors []validators.ValidatorErrorChild
 
 	// Body contains the body.
 	Body Body
@@ -27,7 +26,7 @@ type BodyValidator struct {
 // Reset resets any content set during validation.
 func (validator *BodyValidator) Reset() {
 	validator.Body = make([]string, 0)
-	validator.Errors = make([]error, 0)
+	validator.Errors = make([]validators.ValidatorErrorChild, 0)
 }
 
 // NewDefaultBodyValidator creates the base BodyValidator.
@@ -83,13 +82,9 @@ func (validator *BodyValidator) Equal(other *BodyValidator) bool {
 	return validator.lineLength.Equal(other.lineLength)
 }
 
-func (validator *BodyValidator) ValidatedContent() Body {
-	return validator.Body
-}
-
 // ValidateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
-func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error) {
+func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	// for both at zero, don't check length
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
@@ -101,18 +96,18 @@ func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (e error
 	if !validator.lineLength.Contains(lenLine) {
 		var validatorError = validators.ValidatorError{
 			Line: lineNum, MessagePart: validators.MessageParts.Body}
-		e = validators.InvalidLineLengthError{
-			ValidatorError: validatorError, Expected: validator.lineLength, Received: lenLine}
+		errs = append(errs, validators.InvalidLineLengthError{
+			ValidatorError: validatorError, Expected: validator.lineLength, Received: lenLine})
 	}
 	return
 }
 
-func (validator *BodyValidator) Validate(reader io.Reader) (e error) {
+func (validator *BodyValidator) Validate(reader io.Reader) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }
 
 // ValidateString validates a message body block.
-func (validator *BodyValidator) ValidateString(possibleBody string) (e error) {
+func (validator *BodyValidator) ValidateString(possibleBody string) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateStringWithLine(possibleBody, 1)
 }
 
@@ -122,13 +117,13 @@ func (validator *BodyValidator) ValidateString(possibleBody string) (e error) {
 // on which the string starts in the original message, assuming that the trailer
 // is a part of a longer message. This is currently only relevant for accurate
 // reporting of the line number on which a validation error occurs.
-func (validator *BodyValidator) ValidateStringWithLine(possibleBody string, startLine uint) (e error) {
+func (validator *BodyValidator) ValidateStringWithLine(possibleBody string, startLine uint) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScannerWithLine(bufio.NewScanner(strings.NewReader(possibleBody)), startLine-1)
 }
 
 // ValidateScanner validates the content returned by the scanner. `scanner` is expected
 // to be a line-by-line scanner.
-func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
+func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScannerWithLine(scanner, 0)
 }
 
@@ -136,17 +131,14 @@ func (validator *BodyValidator) ValidateScanner(scanner *bufio.Scanner) (e error
 // to be a line-by-line scanner. `timesScanned` specifies
 // the number of times .Scan() has been called on `scanner`, representing the
 // line at which the the scanner is.
-func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (e error) {
+func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (errs []validators.ValidatorErrorChild) {
 
 	validator.Reset()
 
 	var line string
-	e = nil
-	var errs []error
 
 	defer func() {
 		validator.Errors = errs
-		e = errors.Join(errs...)
 	}()
 
 	var scner = utils.CountingScanner{Scanner: scanner}
@@ -194,9 +186,7 @@ func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, 
 
 		// processing the first line requires the odd looping here
 		body = append(body, line)
-		if e := validator.ValidateLine(line, scner.TimesScanned); e != nil {
-			errs = append(errs, e)
-		}
+		errs = append(errs, validator.ValidateLine(line, scner.TimesScanned)...)
 
 		if !scner.Scan() {
 			break
@@ -206,5 +196,5 @@ func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, 
 	}
 	validator.Body = body
 
-	return e
+	return
 }

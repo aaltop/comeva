@@ -8,8 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-
-	errs "comeva/internal/errors"
 )
 
 func FixtureValidator() *BodyValidator {
@@ -148,7 +146,7 @@ func TestErrorCountMatches(t *testing.T) {
 		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
 			var validator = FixtureValidator()
 
-			var returnedErrors = errs.UnwrapAll(validator.ValidateString(trailer))
+			var returnedErrors = validator.ValidateString(trailer)
 			var returnedErrorsCount = len(returnedErrors)
 
 			if returnedErrorsCount == 0 {

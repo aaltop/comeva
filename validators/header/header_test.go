@@ -7,8 +7,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-
-	errs "comeva/internal/errors"
 )
 
 func FixtureValidator() *HeaderValidator {
@@ -88,8 +86,8 @@ func TestHeaderValidatorValidate(t *testing.T) {
 			var headerValidator validators.ReaderValidator = FixtureValidator()
 			var headerReader = strings.NewReader(header)
 
-			var err error = headerValidator.Validate(headerReader)
-			if err != nil {
+			var err []validators.ValidatorErrorChild = headerValidator.Validate(headerReader)
+			if len(err) != 0 {
 				t.Errorf("Error matching: %v", err)
 			}
 		})
@@ -104,9 +102,10 @@ func TestValidHeader(t *testing.T) {
 	for _, header := range ValidHeader() {
 		t.Run(header, func(t *testing.T) {
 			var validator = FixtureValidator()
-			var err error = validator.ValidateString(header)
-			if err != nil {
-				t.Errorf("Error matching: %v", err)
+			var err = validator.ValidateString(header)
+			if len(err) != 0 {
+
+				t.Errorf("Error matching: %v\nHeader: %v\n", err, header)
 			}
 		})
 	}
@@ -217,12 +216,12 @@ func TestValidateDescription(t *testing.T) {
 	var validator = FixtureValidator()
 	var valid = "Add new feature"
 	var invalidNoVerb = "No verb starting this description"
-	var err error
-	if _, err = validator.ValidateDescription(valid); err != nil {
+	var err []validators.ValidatorErrorChild
+	if _, err = validator.ValidateDescription(valid); len(err) != 0 {
 		t.Errorf("Valid description '%s' was found to be invalid", valid)
 	}
 	var invalidFormat = "Invalid description '%s' was found to be valid"
-	if _, err = validator.ValidateDescription(invalidNoVerb); err == nil {
+	if _, err = validator.ValidateDescription(invalidNoVerb); len(err) == 0 {
 		t.Errorf(invalidFormat, invalidNoVerb)
 	}
 }
@@ -257,7 +256,7 @@ func TestErrorCountMatches(t *testing.T) {
 		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
 			var validator = FixtureValidator()
 
-			var returnedErrors = errs.UnwrapAll(validator.ValidateString(trailer))
+			var returnedErrors = validator.ValidateString(trailer)
 			var returnedErrorsCount = len(returnedErrors)
 
 			if returnedErrorsCount == 0 {

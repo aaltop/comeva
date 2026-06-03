@@ -77,7 +77,7 @@ type HeaderValidator struct {
 	// Minimum and maximum.
 	lineLength utils.Bounds[uint]
 
-	Errors []error
+	Errors []validators.ValidatorErrorChild
 
 	// The content of the header in an easy accessible format.
 	Header Header
@@ -113,7 +113,7 @@ func (validator *HeaderValidator) SetLineLength(min, max uint) (e error) {
 // Reset resets any content set during validation.
 func (validator *HeaderValidator) Reset() {
 	validator.Header = Header{}
-	validator.Errors = make([]error, 0)
+	validator.Errors = make([]validators.ValidatorErrorChild, 0)
 }
 
 // NewDefaultHeaderValidator creates the base [HeaderValidator].
@@ -187,14 +187,10 @@ func (validator *HeaderValidator) Help() string {
 		fmt.Sprintf("	minimum and maximum length: %v\n", validator.lineLength)
 }
 
-func (validator *HeaderValidator) ValidatedContent() *Header {
-	return &validator.Header
-}
-
 // Validate validates the header of a commit message, returning
 // a non-nil error if validation
 // failed at some point. This sets the Header of the validator.
-func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
+func (validator *HeaderValidator) Validate(reader io.Reader) (errs []validators.ValidatorErrorChild) {
 	var stringBuilder = strings.Builder{}
 	var buffer = make([]byte, 256)
 	var readerError error
@@ -215,15 +211,15 @@ func (validator *HeaderValidator) Validate(reader io.Reader) (e error) {
 	}
 
 	if !(readerError == io.EOF) {
-		return readerError
+		errs = append(errs, validators.ToValidatorErrorChild(readerError))
+		return
 	}
 
 	return validator.ValidateString(stringBuilder.String())
 }
 
 // Validate the length of the header.
-func (validator *HeaderValidator) ValidateLength(possibleHeader string) (e error) {
-	e = nil
+func (validator *HeaderValidator) ValidateLength(possibleHeader string) (errs []validators.ValidatorErrorChild) {
 
 	var lower, upper = int(validator.lineLength.Lower), int(validator.lineLength.Upper)
 	if lower == 0 && upper == 0 {
@@ -234,42 +230,43 @@ func (validator *HeaderValidator) ValidateLength(possibleHeader string) (e error
 	if !validator.lineLength.Contains(uint(len(possibleHeader))) {
 		var validatorError = validators.ValidatorError{
 			Line: 1, MessagePart: validators.MessageParts.Header}
-		e = validators.InvalidLineLengthError{
+		return append(errs, validators.InvalidLineLengthError{
 			Expected:       validator.lineLength,
 			Received:       uint(len(possibleHeader)),
-			ValidatorError: validatorError}
+			ValidatorError: validatorError,
+		})
 	}
-	return e
+	return
 }
 
 // Validate the scope (of Conventional commits syntax).
-func (validator *HeaderValidator) ValidateScope(scope string) (e error) {
+func (validator *HeaderValidator) ValidateScope(scope string) (errs []validators.ValidatorErrorChild) {
 	if len(validator.scopes) == 0 || slices.Contains(validator.scopes, scope) {
-		return nil
+		return
 	}
-	return InvalidScopeError{
+	return append(errs, InvalidScopeError{
 		Expected: validator.scopes,
 		Received: scope,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Header,
 			Line:        1,
 		},
-	}
+	})
 }
 
 // Validate the type (of Conventional commits syntax).
-func (validator *HeaderValidator) ValidateType(typ string) (e error) {
+func (validator *HeaderValidator) ValidateType(typ string) (errs []validators.ValidatorErrorChild) {
 	if len(validator.types) == 0 || slices.Contains(validator.types, typ) {
-		return nil
+		return
 	}
-	return InvalidTypeError{
+	return append(errs, InvalidTypeError{
 		Expected: validator.types,
 		Received: typ,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Header,
 			Line:        1,
 		},
-	}
+	})
 }
 
 // Attempt extraction of constituent parts from the description of
@@ -286,72 +283,69 @@ func (validator *HeaderValidator) processDescription(description string) (desc D
 }
 
 // Validate the description of a commit message.
-func (validator *HeaderValidator) ValidateDescription(description string) (desc Description, e error) {
-	e = nil
+func (validator *HeaderValidator) ValidateDescription(description string) (desc Description, errs []validators.ValidatorErrorChild) {
+	var e error
 	desc, e = validator.processDescription(description)
 	if e != nil ||
 		validator.ValidateVerb(desc.Verb) != nil {
-		e = InvalidDescriptionError{
+		errs = append(errs, InvalidDescriptionError{
 			Received: description,
 			Verbs:    validator.verbs,
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Header,
 				Line:        1,
 			},
-		}
+		})
 	}
-	return desc, e
+	return
 }
 
 // Validate the verb of a description of a commit message.
-func (validator *HeaderValidator) ValidateVerb(verb string) (e error) {
+func (validator *HeaderValidator) ValidateVerb(verb string) (errs []validators.ValidatorErrorChild) {
 	if len(validator.verbs) == 0 || slices.Contains(validator.verbs, verb) {
-		return nil
+		return
 	}
-	return InvalidVerbError{
+	return append(errs, InvalidVerbError{
 		Expected: validator.verbs,
 		Received: verb,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Header,
 			Line:        1,
 		},
-	}
+	})
 }
 
 // ValidateString validates the header of a commit message, returning
 // a non-nil error if validation
 // failed at some point. This sets the Header of the validator.
-func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error) {
+func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []validators.ValidatorErrorChild) {
+
+	var ve validators.ValidatorErrorChild
+	var tempErrs []validators.ValidatorErrorChild
 
 	validator.Reset()
-	var errs []error
 
 	defer func() {
 		validator.Errors = errs
-		e = errors.Join(errs...)
 	}()
 
 	var matches = validator.header.FindStringSubmatch(possibleHeader)
 	if matches == nil {
 
-		e = InvalidError{
+		ve = InvalidError{
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Header,
 				Line:        1,
 			},
 		}
-		errs = append(errs, e)
+		errs = append(errs, ve)
 		return
 	}
 
-	if err := validator.ValidateLength(possibleHeader); err != nil {
-		errs = append(errs, err)
-	}
+	errs = append(errs, validator.ValidateLength(possibleHeader)...)
 
 	var typ = matches[validator.header.SubexpIndex("type")]
-	if err := validator.ValidateType(typ); err != nil {
-		errs = append(errs, err)
-	}
+	errs = append(errs, validator.ValidateType(typ)...)
 	validator.Header.Type = typ
 
 	var breaking = matches[validator.header.SubexpIndex("breaking")]
@@ -361,17 +355,15 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (e error
 	// scope is assumed to be at least one character, so empty scopes
 	// mean that the content was matched correctly but that the scope group
 	// did not exist, which is fine
-	if e = validator.ValidateScope(scope); scope != "" && e != nil {
-		errs = append(errs, e)
+	if scope != "" {
+		errs = append(errs, validator.ValidateScope(scope)...)
 	}
 	validator.Header.Scope = scope
 
 	var desc = matches[validator.header.SubexpIndex("description")]
 	var description Description
-	description, e = validator.ValidateDescription(desc)
-	if e != nil {
-		errs = append(errs, e)
-	}
+	description, tempErrs = validator.ValidateDescription(desc)
+	errs = append(errs, tempErrs...)
 	validator.Header.Description = description
 
 	return

@@ -14,8 +14,11 @@ type InvalidKeyError struct {
 }
 
 func (e InvalidKeyError) Error() string {
-	var message string = fmt.Sprintf("Invalid trailer key %s, should be one of %v", e.Received, e.Expected)
-	return e.ErrorString(message)
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidKeyError) GetReason() string {
+	return fmt.Sprintf("Invalid trailer key %s, should be one of %v", e.Received, e.Expected)
 }
 
 // InvalidKeyValueError is returned when a key-value pair cannot be found.
@@ -24,7 +27,11 @@ type InvalidKeyValueError struct {
 }
 
 func (e InvalidKeyValueError) Error() string {
-	return e.ErrorString("No key-value pair found")
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidKeyValueError) GetReason() string {
+	return "No key-value pair found"
 }
 
 // InvalidValueContinuationError is returned when an expected value continuation
@@ -35,8 +42,11 @@ type InvalidValueContinuationError struct {
 }
 
 func (e InvalidValueContinuationError) Error() string {
-	var message string = fmt.Sprintf("Expecting value continuation with indent %d", e.Indent)
-	return e.ErrorString(message)
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidValueContinuationError) GetReason() string {
+	return fmt.Sprintf("Expecting value continuation with indent %d", e.Indent)
 }
 
 // MissingRequiredKeyError is returned when a required key is not found in the
@@ -47,5 +57,9 @@ type MissingRequiredKeyError struct {
 }
 
 func (e MissingRequiredKeyError) Error() string {
-	return e.ErrorString(fmt.Sprintf("Required keys %v not found in trailer", e.Missing))
+	return e.ErrorString(e.GetReason())
+}
+
+func (e MissingRequiredKeyError) GetReason() string {
+	return fmt.Sprintf("Required keys %v not found in trailer", e.Missing)
 }

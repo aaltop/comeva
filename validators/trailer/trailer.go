@@ -68,7 +68,7 @@ type TrailerValidator struct {
 	continuationIndent uint
 	lineLength         utils.Bounds[uint]
 
-	Errors []error
+	Errors []validators.ValidatorErrorChild
 
 	Trailers []Trailer
 }
@@ -151,7 +151,7 @@ func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
 // Reset resets any content set during validation.
 func (validator *TrailerValidator) Reset() {
 	validator.Trailers = []Trailer{}
-	validator.Errors = make([]error, 0)
+	validator.Errors = make([]validators.ValidatorErrorChild, 0)
 }
 
 // newContinuationRegex creates a new continuationRegex for TrailerValidator
@@ -185,16 +185,19 @@ func (validator *TrailerValidator) SetContinuationIndent(indent uint) (e error) 
 	return e
 }
 
-func (validator *TrailerValidator) ValidatedContent() []Trailer {
-	return validator.Trailers
+func (validator *TrailerValidator) ValidatedContent() validators.ValidatedContent[[]Trailer] {
+	return validators.ValidatedContent[[]Trailer]{
+		Content: validator.Trailers,
+		Errors:  validator.Errors,
+	}
 }
 
-func (validator *TrailerValidator) Validate(reader io.Reader) (e error) {
+func (validator *TrailerValidator) Validate(reader io.Reader) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }
 
 // ValidateString validates a trailer block.
-func (validator *TrailerValidator) ValidateString(possibleTrailer string) (e error) {
+func (validator *TrailerValidator) ValidateString(possibleTrailer string) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateStringWithLine(possibleTrailer, 1)
 }
 
@@ -204,7 +207,7 @@ func (validator *TrailerValidator) ValidateString(possibleTrailer string) (e err
 // on which the string starts in the original message, assuming that the trailer
 // is a part of a longer message. This is currently only relevant for accurate
 // reporting of the line number on which a validation error occurs.
-func (validator *TrailerValidator) ValidateStringWithLine(possibleTrailer string, startLine uint) (e error) {
+func (validator *TrailerValidator) ValidateStringWithLine(possibleTrailer string, startLine uint) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScannerWithLine(bufio.NewScanner(strings.NewReader(possibleTrailer)), startLine-1)
 }
 
@@ -222,23 +225,23 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 
 // ValidateKey checks whether the key of a trailer is valid (is included in the
 // required or optional keys or is BREAKING-CHANGE). Returns [InvalidKeyError] if `e` is non-nil.
-func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (e error) {
+func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	if possibleKey == "BREAKING-CHANGE" {
 		return nil
 	}
 
-	var keyError = InvalidKeyError{
+	var tempErrs = append(errs, InvalidKeyError{
 		Expected: validator.GetKeys(),
 		Received: possibleKey,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Trailer,
 			Line:        lineNum,
 		},
-	}
+	})
 
 	if !keyRegex.MatchString(possibleKey) {
-		return keyError
+		return tempErrs
 	}
 
 	var _, ok = validator.requiredKeys.Get(possibleKey)
@@ -253,25 +256,25 @@ func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint)
 	if ok {
 		return nil
 	}
-	return keyError
+	return tempErrs
 }
 
-func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (e error) {
+func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
 	if lower == 0 && upper == 0 {
-		return nil
+		return
 	}
 
 	var lineLength = uint(len(line))
 	if !validator.lineLength.Contains(lineLength) {
-		return validators.InvalidLineLengthError{
+		errs = append(errs, validators.InvalidLineLengthError{
 			Expected: validator.lineLength,
 			Received: lineLength,
 			ValidatorError: validators.ValidatorError{
 				Line:        lineNum,
 				MessagePart: validators.MessageParts.Trailer,
-			}}
+			}})
 	}
 	return
 }
@@ -293,8 +296,8 @@ func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bo
 // not, by the validation definition used here, continue to another line.
 // The [Trailer] `t` will have empty strings for its values if a match is not
 // found.
-func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, e error) {
-	var errs []error
+func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, errs []validators.ValidatorErrorChild) {
+	var ve validators.ValidatorErrorChild
 
 	// keyValueRegex might encounter something with a correct key, but no value
 	// specified. In this case, it's going to report that it did not find
@@ -304,70 +307,61 @@ func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lin
 
 	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
 	if matches == nil {
-		e = InvalidKeyValueError{
+		ve = InvalidKeyValueError{
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Trailer,
 				Line:        lineNum,
 			},
 		}
-		errs = append(errs, e)
+		errs = append(errs, ve)
 		// can't really do anything else, so return early.
-		return t, errors.Join(errs...)
+		return
 	}
 
 	// there isn't really any hard rules as to what the value in a trailer should
 	// be, so not particularly testing that here.
 	t.Key, t.Value = matches[keyValueRegex.SubexpIndex("key")], matches[keyValueRegex.SubexpIndex("value")]
-	if e = validator.ValidateKey(t.Key, lineNum); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.ValidateKey(t.Key, lineNum)...)
 
-	if len(errs) > 0 {
-		e = errors.Join(errs...)
-	}
-	return t, e
+	return
 }
 
 // ValidateValueContinuation checks whether the line can be a valid continuation
 // of the value of a key-value pair.
-func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuation string, lineNum uint) (e error) {
+func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuation string, lineNum uint) (errs []validators.ValidatorErrorChild) {
+	var ve validators.ValidatorErrorChild
 
-	var errs []error
-
-	if e := validator.ValidateLineLength(possibleContinuation, lineNum); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.ValidateLineLength(possibleContinuation, lineNum)...)
 
 	if !validator.continuationRegex.MatchString(possibleContinuation) {
+
+		ve = InvalidValueContinuationError{
+			Indent: validator.continuationIndent,
+			ValidatorError: validators.ValidatorError{
+				MessagePart: validators.MessageParts.Trailer,
+				Line:        lineNum,
+			},
+		}
 		errs = append(
 			errs,
-			InvalidValueContinuationError{
-				Indent: validator.continuationIndent,
-				ValidatorError: validators.ValidatorError{
-					MessagePart: validators.MessageParts.Trailer,
-					Line:        lineNum,
-				},
-			})
+			ve,
+		)
 	}
 
-	if len(errs) > 0 {
-		e = errors.Join(errs...)
-	}
-
-	return e
+	return
 }
 
 // ValidateScanner validates the content returned by the scanner. `scanner` is expected
 // to be a line-by-line scanner. `timesScanned` specifies
 // the number of times .Scan() has been called on `scanner`, representing the
 // line at which the the scanner is.
-func (validator *TrailerValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
+func (validator *TrailerValidator) ValidateScanner(scanner *bufio.Scanner) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScannerWithLine(scanner, 0)
 }
 
 // EnsureRequiredKeys checks that all required keys are found in the trailers
 // after validation has been performed.
-func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
+func (validator *TrailerValidator) EnsureRequiredKeys() (errs []validators.ValidatorErrorChild) {
 
 	var missingRequired []string
 	var presentKeys []string
@@ -381,12 +375,12 @@ func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
 	}
 
 	if len(missingRequired) > 0 {
-		e = MissingRequiredKeyError{
+		errs = append(errs, MissingRequiredKeyError{
 			Missing: missingRequired,
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Trailer,
 			},
-		}
+		})
 	}
 	return
 }
@@ -395,7 +389,7 @@ func (validator *TrailerValidator) EnsureRequiredKeys() (e error) {
 // to be a line-by-line scanner. `timesScanned` specifies
 // the number of times .Scan() has been called on `scanner`, representing the
 // line at which the the scanner is.
-func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (e error) {
+func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanner, timesScanned uint) (errs []validators.ValidatorErrorChild) {
 
 	// empty the Trailers in case this function has been called previously
 	validator.Reset()
@@ -404,26 +398,22 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 	// so the errors can report the correct line.
 	var scner = utils.CountingScanner{Scanner: scanner}
 	scner.TimesScanned = timesScanned
-	var errs []error
 
 	defer func() {
 		validator.Errors = errs
-		e = errors.Join(errs...)
 	}()
 
 	var trailer Trailer = Trailer{}
-	var keyValueError, continuationError error
+	var keyValueErrors, continuationErrors []validators.ValidatorErrorChild
 	for scner.Scan() {
 		var line string = scner.Text()
 		var tempTrailer Trailer
 
-		if e = validator.ValidateLineLength(line, scner.TimesScanned); e != nil {
-			errs = append(errs, e)
-		}
+		errs = append(errs, validator.ValidateLineLength(line, scner.TimesScanned)...)
 
-		tempTrailer, keyValueError = validator.ValidateKeyValue(line, scner.TimesScanned)
+		tempTrailer, keyValueErrors = validator.ValidateKeyValue(line, scner.TimesScanned)
 
-		if keyValueError == nil {
+		if len(keyValueErrors) == 0 {
 			// valid key-value pair
 			trailer = tempTrailer
 			validator.Trailers = append(validator.Trailers, tempTrailer)
@@ -432,19 +422,19 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 
 			// might be continuation instead
 			if tempTrailer.Key == "" && trailer.Key != "" {
-				continuationError = validator.ValidateValueContinuation(line, scner.TimesScanned)
-				if continuationError == nil {
+				continuationErrors = validator.ValidateValueContinuation(line, scner.TimesScanned)
+				if len(continuationErrors) == 0 {
 					// is continuation, just add it to the value as-is
 					validator.Trailers[len(validator.Trailers)-1].Value += "\n" + line
 					continue
 				} else {
 					// not continuation
-					errs = append(errs, continuationError)
+					errs = append(errs, continuationErrors...)
 				}
 
 			} else {
 				// First scanned line was not a valid key-value pair
-				errs = append(errs, keyValueError)
+				errs = append(errs, keyValueErrors...)
 			}
 
 			// reset trailer so that next loop will not test for line continuation
@@ -458,9 +448,7 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 
 	}
 
-	if e = validator.EnsureRequiredKeys(); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.EnsureRequiredKeys()...)
 
 	return
 }

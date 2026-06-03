@@ -14,6 +14,10 @@ func (e InvalidError) Error() string {
 	return e.ErrorString("Invalid header, did not match regular expression")
 }
 
+func (e InvalidError) GetReason() string {
+	return "Invalid header, did not match regular expression"
+}
+
 type InvalidScopeError struct {
 	validators.ValidatorError
 	Expected []string
@@ -21,7 +25,11 @@ type InvalidScopeError struct {
 }
 
 func (e InvalidScopeError) Error() string {
-	return e.ErrorString(fmt.Sprintf("Invalid scope '%s', should be one of %v", e.Received, e.Expected))
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidScopeError) GetReason() string {
+	return fmt.Sprintf("Invalid scope '%s', should be one of %v", e.Received, e.Expected)
 }
 
 type InvalidTypeError struct {
@@ -31,7 +39,11 @@ type InvalidTypeError struct {
 }
 
 func (e InvalidTypeError) Error() string {
-	return e.ErrorString(fmt.Sprintf("Invalid type '%s', should be one of %v", e.Received, e.Expected))
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidTypeError) GetReason() string {
+	return fmt.Sprintf("Invalid type '%s', should be one of %v", e.Received, e.Expected)
 }
 
 type InvalidDescriptionError struct {
@@ -42,10 +54,12 @@ type InvalidDescriptionError struct {
 }
 
 func (e InvalidDescriptionError) Error() string {
-	var message string = fmt.Sprintf("Invalid description '%s', ", e.Received) +
-		fmt.Sprintf("should be '<verb> <content>', where <verb> is one of %v ", e.Verbs)
+	return e.ErrorString(e.GetReason())
+}
 
-	return e.ErrorString(message)
+func (e InvalidDescriptionError) GetReason() string {
+	return fmt.Sprintf("Invalid description '%s', ", e.Received) +
+		fmt.Sprintf("should be '<verb> <content>', where <verb> is one of %v ", e.Verbs)
 }
 
 type InvalidVerbError struct {
@@ -55,5 +69,9 @@ type InvalidVerbError struct {
 }
 
 func (e InvalidVerbError) Error() string {
-	return e.ErrorString(fmt.Sprintf("Invalid verb '%s', should be one of %v", e.Received, e.Expected))
+	return e.ErrorString(e.GetReason())
+}
+
+func (e InvalidVerbError) GetReason() string {
+	return fmt.Sprintf("Invalid verb '%s', should be one of %v", e.Received, e.Expected)
 }

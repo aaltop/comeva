@@ -9,7 +9,11 @@ type UnexpectedEOFError struct {
 }
 
 func (e UnexpectedEOFError) Error() string {
-	return e.ErrorString("Unexpected EOF")
+	return e.ErrorString(e.GetReason())
+}
+
+func (e UnexpectedEOFError) GetReason() string {
+	return "Unexpected EOF"
 }
 
 // BreakingChangeError is returned when breaking changes are not properly
@@ -19,6 +23,9 @@ type BreakingChangeError struct {
 }
 
 func (e BreakingChangeError) Error() string {
-	var message string = "An exclamation mark denoting a breaking change should be accompanied by a BREAKING-CHANGE key in the trailer block and vice versa"
-	return e.ErrorString(message)
+	return e.ErrorString(e.GetReason())
+}
+
+func (e BreakingChangeError) GetReason() string {
+	return "An exclamation mark denoting a breaking change should be accompanied by a BREAKING-CHANGE key in the trailer block and vice versa"
 }

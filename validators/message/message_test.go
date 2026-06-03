@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	errs "comeva/internal/errors"
 	testingUtils "comeva/internal/testing"
 )
 
@@ -140,22 +139,22 @@ func TestBreakingChangesTogether(t *testing.T) {
 	}
 
 	var exclamationMissingMessage = "feat: Add feature\n\nBREAKING-CHANGE: broke thing"
-	var e error
-	if e = validator.ValidateString(exclamationMissingMessage); e == nil {
+	var errs []validators.ValidatorErrorChild
+	if errs = validator.ValidateString(exclamationMissingMessage); len(errs) == 0 {
 		t.Errorf("Invalid message\n%s\nwas found to be valid (should have breaking change exclamation in header)", exclamationMissingMessage)
 	}
-	if !errors.As(e, &BreakingChangeError{}) {
+	if !errors.As(validators.JoinErrors(errs...), &BreakingChangeError{}) {
 		t.Errorf("Expected a BreakingChangeError")
 	}
 
 	var trailerMissingMessage = "feat!: Add feature whut"
-	if e = validator.ValidateString(trailerMissingMessage); e == nil {
+	if errs = validator.ValidateString(trailerMissingMessage); len(errs) == 0 {
 		t.Errorf(
 			"Invalid message\n%s\nwas found to be valid (should have BREAKING-CHANGE key in trailer block, had %v)",
 			trailerMissingMessage,
 			validator.TrailerValidator.Trailers)
 	}
-	if !errors.As(e, &BreakingChangeError{}) {
+	if !errors.As(validators.JoinErrors(errs...), &BreakingChangeError{}) {
 		t.Errorf("Expected a BreakingChangeError")
 	}
 }
@@ -177,22 +176,22 @@ func TestTrailerChecksKeys(t *testing.T) {
 	var messageInvalidTrailer = fmt.Sprintf("%s\n\n%s", header, "Some-Key: some info")
 	var message = fmt.Sprintf("%s\n\n%s", header, trailer)
 
-	var e error
-	if e = validator.ValidateString(message); e != nil {
-		t.Errorf("Valid message\n%s\nfound to be invalid: %v", message, e)
+	var errs []validators.ValidatorErrorChild
+	if errs = validator.ValidateString(message); len(errs) != 0 {
+		t.Errorf("Valid message\n%s\nfound to be invalid: %v", message, errs)
 	}
 
 	var invalidString = "Invalid message (missing required trailer key 'Effect')\n%s\nfound to be valid"
 
-	if e = validator.ValidateString(messageInvalidTrailer); e == nil {
+	if errs = validator.ValidateString(messageInvalidTrailer); len(errs) == 0 {
 		t.Errorf(invalidString, messageInvalidTrailer)
 	}
 
-	if e = validator.ValidateString(messageNoTrailer); e == nil {
+	if errs = validator.ValidateString(messageNoTrailer); len(errs) == 0 {
 		t.Errorf(invalidString, messageNoTrailer)
 	}
 
-	if e = validator.ValidateString(messageNoTrailer2); e == nil {
+	if errs = validator.ValidateString(messageNoTrailer2); len(errs) == 0 {
 		t.Errorf(invalidString, messageNoTrailer2)
 	}
 }
@@ -204,13 +203,14 @@ func TestNoGapBetweenBodyAndTrailer(t *testing.T) {
 
 	var message = fmt.Sprintf("%v\n\n%v\n%v", "feat: Add commit", "A body\nwith a few lines", "Key: value")
 
-	var e error
-	if e = validator.ValidateString(message); e == nil {
+	var errs []validators.ValidatorErrorChild
+	if errs = validator.ValidateString(message); len(errs) == 0 {
 		t.Fatal("Expected error, got nil")
 	}
 
-	if !strings.Contains(e.Error(), "before trailer block") {
-		t.Errorf("Unexpected error message: %v\n", e.Error())
+	var joined = validators.JoinErrors(errs...)
+	if !strings.Contains(joined.Error(), "before trailer block") {
+		t.Errorf("Unexpected error message: %v\n", joined.Error())
 	}
 }
 
@@ -225,7 +225,7 @@ func TestReset(t *testing.T) {
 	validator.FoundHeader = true
 	validator.FoundBody = true
 	validator.FoundTrailer = true
-	validator.Errors = append(validator.Errors, errors.New("error"))
+	validator.Errors = append(validator.Errors, validators.InvalidLineError{})
 
 	validator.Reset()
 
@@ -248,7 +248,7 @@ func TestErrorCountMatches(t *testing.T) {
 
 			validator.HeaderValidator = header.NewHeaderValidatorWithDefaults()
 
-			var returnedErrors = errs.UnwrapAll(validator.ValidateString(message))
+			var returnedErrors = validator.ValidateString(message)
 			var containedErrors = validator.AllErrors()
 			var returnedErrorsCount = len(returnedErrors)
 			var containedErrorsCount = len(containedErrors)

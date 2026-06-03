@@ -9,6 +9,7 @@ import (
 
 	exitState "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+	"comeva/validators"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"
@@ -86,6 +87,6 @@ func (prog *program) validateCommitMessage(message string) (e error) {
 
 	var validator *messageValidation.MessageValidator
 	validator = prog.getMessageValidator()
-	e = validator.ValidateString(message)
+	e = validators.JoinErrors(validator.ValidateString(message)...)
 	return e
 }

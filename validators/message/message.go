@@ -7,7 +7,6 @@ import (
 	"comeva/validators/body"
 	"comeva/validators/header"
 	"comeva/validators/trailer"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -23,7 +22,7 @@ type MessageValidator struct {
 
 	// Errors contains any errors particular to the MessageValidator itself;
 	// sub-validator-specific errors are found in the relevant sub-validator.
-	Errors []error
+	Errors []validators.ValidatorErrorChild
 
 	FoundHeader, FoundBody, FoundTrailer bool
 }
@@ -38,7 +37,7 @@ func (validator *MessageValidator) Reset() {
 	validator.FoundBody = false
 	validator.FoundTrailer = false
 
-	validator.Errors = make([]error, 0)
+	validator.Errors = make([]validators.ValidatorErrorChild, 0)
 }
 
 // NewDefaultMessageValidator creates the base MessageValidator.
@@ -89,7 +88,7 @@ func (validator *MessageValidator) Equal(other *MessageValidator) bool {
 
 // AllErrors returns all the validation errors encountered by the validator
 // and its subvalidators.
-func (validator *MessageValidator) AllErrors() (errs []error) {
+func (validator *MessageValidator) AllErrors() (errs []validators.ValidatorErrorChild) {
 	errs = append(errs, validator.Errors...)
 	errs = append(errs, validator.HeaderValidator.Errors...)
 	errs = append(errs, validator.BodyValidator.Errors...)
@@ -97,11 +96,11 @@ func (validator *MessageValidator) AllErrors() (errs []error) {
 	return
 }
 
-func (validator *MessageValidator) Validate(reader io.Reader) (e error) {
+func (validator *MessageValidator) Validate(reader io.Reader) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScanner(bufio.NewScanner(reader))
 }
 
-func (validator *MessageValidator) ValidateString(possibleMessage string) (e error) {
+func (validator *MessageValidator) ValidateString(possibleMessage string) (errs []validators.ValidatorErrorChild) {
 	return validator.ValidateScanner(bufio.NewScanner(strings.NewReader(possibleMessage)))
 }
 
@@ -115,7 +114,7 @@ var trailedEndRegex = regexp.MustCompile(`---(\r?\n)?`)
 // ValidateBreakingChange checks whether an exclamation mark (denoting a breaking change)
 // in the header is accompanied by a BREAKING-CHANGE trailer key and vice versa.
 // To be run after a message has been processed.
-func (validator *MessageValidator) ValidateBreakingChange() (e error) {
+func (validator *MessageValidator) ValidateBreakingChange() (errs []validators.ValidatorErrorChild) {
 	// hasBreaking reports whether the trailers have a BREAKING-CHANGE key
 	var hasBreaking bool = slices.ContainsFunc(validator.TrailerValidator.Trailers,
 		func(tr trailer.Trailer) bool {
@@ -125,58 +124,51 @@ func (validator *MessageValidator) ValidateBreakingChange() (e error) {
 
 	if validator.HeaderValidator.Header.Breaking {
 		if !hasBreaking {
-			e = BreakingChangeError{}
+			errs = append(errs, BreakingChangeError{})
 		}
 	} else {
 		if hasBreaking {
-			e = BreakingChangeError{}
+			errs = append(errs, BreakingChangeError{})
 		}
 	}
 	return
 }
 
-func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e error) {
+func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (errs []validators.ValidatorErrorChild) {
 
 	validator.Reset()
 	var scner = utils.CountingScanner{Scanner: scanner}
-	var errs []error
-
-	defer func() {
-		e = errors.Join(errs...)
-	}()
+	var ve validators.ValidatorErrorChild
+	var tempErrs []validators.ValidatorErrorChild
 
 	if !scner.Scan() {
-		e = UnexpectedEOFError{
+		ve = UnexpectedEOFError{
 			ValidatorError: validators.ValidatorError{
 				Line: scner.TimesScanned,
 			},
 		}
 		// MessageValidator-specific errors should be put here as well
-		validator.Errors = append(validator.Errors, e)
-		errs = append(errs, e)
+		validator.Errors = append(validator.Errors, ve)
+		errs = append(errs, ve)
 		return
 	}
 
 	var possibleHeader string = scner.Text()
-	if e = validator.HeaderValidator.ValidateString(possibleHeader); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.HeaderValidator.ValidateString(possibleHeader)...)
 	validator.FoundHeader = true
 
 	// if only header found, fine: return
 	if !scner.Scan() {
 
-		if e = validator.ValidateBreakingChange(); e != nil {
-			errs = append(errs, e)
-		}
+		tempErrs = validator.ValidateBreakingChange()
+		validator.Errors = append(validator.Errors, tempErrs...)
+		errs = append(errs, tempErrs...)
 
 		// Need to check here separately as required keys would not
 		// have been checked. Could technically just check whether there
 		// are any required keys? Would be faster, and probably less error
 		// prone. Does give the proper error message this way, though.
-		if e = validator.TrailerValidator.EnsureRequiredKeys(); e != nil {
-			errs = append(errs, e)
-		}
+		errs = append(errs, validator.TrailerValidator.EnsureRequiredKeys()...)
 
 		return
 	}
@@ -184,20 +176,20 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 	var line string = scner.Text()
 	// line after header should be a newline (\n or \r\n)
 	if line != "" {
-		e = validators.InvalidLineError{
+		ve = validators.InvalidLineError{
 			Reason: fmt.Sprintf("Expected empty newline after header, got %#v", line),
 			ValidatorError: validators.ValidatorError{
 				Line: scner.TimesScanned,
 			}}
-		validator.Errors = append(validator.Errors, e)
-		errs = append(errs, e)
+		validator.Errors = append(validator.Errors, ve)
+		errs = append(errs, ve)
 	}
 
 	var bodyStart, trailerStart = -1, -1
 	var bodyContent, trailerContent []string
 
 	// assigned non-nil if no line precedes the trailer block.
-	var noEmptyBeforeTrailerError error = nil
+	var noEmptyBeforeTrailerError validators.ValidatorErrorChild
 	// find assumed body/start of trailer
 	for scner.Scan() {
 		line = scner.Text()
@@ -238,23 +230,18 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (e er
 		trailerContent = append(trailerContent, line)
 	}
 
-	if e = validator.BodyValidator.ValidateStringWithLine(strings.Join(bodyContent, "\n"), uint(bodyStart)); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.BodyValidator.ValidateStringWithLine(strings.Join(bodyContent, "\n"), uint(bodyStart))...)
 
 	if noEmptyBeforeTrailerError != nil {
 		validator.Errors = append(validator.Errors, noEmptyBeforeTrailerError)
 		errs = append(errs, noEmptyBeforeTrailerError)
 	}
 
-	if e = validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart)); e != nil {
-		errs = append(errs, e)
-	}
+	errs = append(errs, validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart))...)
 
-	if e = validator.ValidateBreakingChange(); e != nil {
-		validator.Errors = append(validator.Errors, e)
-		errs = append(errs, e)
-	}
+	tempErrs = validator.ValidateBreakingChange()
+	validator.Errors = append(validator.Errors, tempErrs...)
+	errs = append(errs, tempErrs...)
 
 	return
 }
