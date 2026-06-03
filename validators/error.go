@@ -2,24 +2,8 @@ package validators
 
 import (
 	"comeva/internal/utils"
-	"errors"
 	"fmt"
 )
-
-func CastErrors[T error](errs ...T) []error {
-	var cast = make([]error, len(errs))
-	for i, e := range errs {
-		cast[i] = e
-	}
-	return cast
-}
-
-// JoinErrors wraps [errors.JoinErrors], allowing values that implement the error interface
-// to be passed.
-func JoinErrors[T error](errs ...T) error {
-	var cast = CastErrors(errs...)
-	return errors.Join(cast...)
-}
 
 // messagePart represents the name of a part of a git commit message.
 // Not to be instantiated directly, see [MessageParts].

@@ -4,12 +4,13 @@ import (
 	"comeva/validators"
 	"comeva/validators/header"
 	"comeva/validators/trailer"
-	"errors"
+	baseErrors "errors"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
 
+	"comeva/internal/errors"
 	testingUtils "comeva/internal/testing"
 )
 
@@ -143,7 +144,7 @@ func TestBreakingChangesTogether(t *testing.T) {
 	if errs = validator.ValidateString(exclamationMissingMessage); len(errs) == 0 {
 		t.Errorf("Invalid message\n%s\nwas found to be valid (should have breaking change exclamation in header)", exclamationMissingMessage)
 	}
-	if !errors.As(validators.JoinErrors(errs...), &BreakingChangeError{}) {
+	if !baseErrors.As(errors.Join(errs...), &BreakingChangeError{}) {
 		t.Errorf("Expected a BreakingChangeError")
 	}
 
@@ -154,7 +155,7 @@ func TestBreakingChangesTogether(t *testing.T) {
 			trailerMissingMessage,
 			validator.TrailerValidator.Trailers)
 	}
-	if !errors.As(validators.JoinErrors(errs...), &BreakingChangeError{}) {
+	if !baseErrors.As(errors.Join(errs...), &BreakingChangeError{}) {
 		t.Errorf("Expected a BreakingChangeError")
 	}
 }
@@ -208,7 +209,7 @@ func TestNoGapBetweenBodyAndTrailer(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	var joined = validators.JoinErrors(errs...)
+	var joined = errors.Join(errs...)
 	if !strings.Contains(joined.Error(), "before trailer block") {
 		t.Errorf("Unexpected error message: %v\n", joined.Error())
 	}

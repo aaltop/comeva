@@ -1,6 +1,8 @@
 // package errors contains utitilies for handling errors.
 package errors
 
+import "errors"
+
 type handledError struct {
 	Error error
 }
@@ -66,4 +68,21 @@ func UnwrapAll(wrappedError error) (errors []error) {
 		errors = append(errors, wrappedError)
 	}
 	return
+}
+
+// Cast casts slices of types that implement the error interface into slices
+// of pure errors.
+func Cast[T error](errs ...T) []error {
+	var cast = make([]error, len(errs))
+	for i, e := range errs {
+		cast[i] = e
+	}
+	return cast
+}
+
+// Join wraps [errors.Join], allowing values that implement the error interface
+// to be passed.
+func Join[T error](errs ...T) error {
+	var cast = Cast(errs...)
+	return errors.Join(cast...)
 }

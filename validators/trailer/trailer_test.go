@@ -3,11 +3,12 @@ package trailer
 import (
 	"bufio"
 	"comeva/validators"
-	"errors"
+	baseErrors "errors"
 	"fmt"
 	"strings"
 	"testing"
 
+	errors "comeva/internal/errors"
 	testingUtils "comeva/internal/testing"
 )
 
@@ -112,7 +113,7 @@ func TestValidateString(t *testing.T) {
 	var validator validators.StringValidator = FixtureValidator()
 
 	var validation = func(tr string) error {
-		return validators.JoinErrors(validator.ValidateString(tr)...)
+		return errors.Join(validator.ValidateString(tr)...)
 	}
 
 	RunTestTrailerBlock(validation, t)
@@ -125,7 +126,7 @@ func TestValidateScanner(t *testing.T) {
 
 	var validation = func(tr string) error {
 		var scanner = bufio.NewScanner(strings.NewReader(tr))
-		return validators.JoinErrors(validator.ValidateScanner(scanner)...)
+		return errors.Join(validator.ValidateScanner(scanner)...)
 	}
 
 	RunTestTrailerBlock(validation, t)
@@ -139,7 +140,7 @@ func TestNoInvalidContinuationError(t *testing.T) {
 		"BREAKING-CHANGE: this line is too long, but should not cause an InvalidValueContinuationError for the previous line"
 
 	var unexpected = &InvalidValueContinuationError{}
-	if e := validators.JoinErrors(validator.ValidateString(trailer)...); errors.As(e, unexpected) {
+	if e := errors.Join(validator.ValidateString(trailer)...); baseErrors.As(e, unexpected) {
 		t.Errorf("Unexpected error: %v\nWhole error:\n%v", unexpected, e)
 	}
 }
@@ -151,7 +152,7 @@ func TestValidateKeyValue(t *testing.T) {
 
 	var validation = func(tr string) error {
 		var _, e = validator.ValidateKeyValue(tr, 1)
-		return validators.JoinErrors(e...)
+		return errors.Join(e...)
 	}
 
 	RunTestValues(validation, ValidKeyValue(), InvalidKeyValue(), t)
@@ -162,7 +163,7 @@ func TestValidateKeyFormat(t *testing.T) {
 	var validator = FixtureValidator()
 
 	var validation = func(key string) error {
-		return validators.JoinErrors(validator.ValidateKey(key, 1)...)
+		return errors.Join(validator.ValidateKey(key, 1)...)
 	}
 
 	RunTestValues(validation, ValidKey(), InvalidKey(), t)
@@ -338,12 +339,12 @@ func TestAttemptParseAll(t *testing.T) {
 
 	for i, trailer := range trailers {
 		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
-			var e error = validators.JoinErrors(validator.ValidateString(trailer)...)
+			var e error = errors.Join(validator.ValidateString(trailer)...)
 			if e == nil {
 				t.Errorf("Invalid trailer\n%s\nwas found to be valid", trailer)
 			}
 
-			if !errors.As(e, &InvalidValueContinuationError{}) {
+			if !baseErrors.As(e, &InvalidValueContinuationError{}) {
 				t.Error("Expected a line continuation to be found invalid")
 			}
 
@@ -376,9 +377,9 @@ func TestNonRequiredNonOptionalKey(t *testing.T) {
 
 	for i, trailer := range []string{invalidStart, invalidMiddle, invalidEnd} {
 		t.Run(fmt.Sprintf("test %d", i+1), func(t *testing.T) {
-			e = validators.JoinErrors(validator.ValidateString(trailer)...)
+			e = errors.Join(validator.ValidateString(trailer)...)
 
-			if !errors.As(e, &InvalidKeyError{}) {
+			if !baseErrors.As(e, &InvalidKeyError{}) {
 				t.Errorf("Expected an InvalidKeyError in\n%v\ngot:\n%v", trailer, e)
 			}
 		})
@@ -431,7 +432,7 @@ func TestBreakingChangeAlwaysValid(t *testing.T) {
 
 	RunTestValues(func(tr string) error {
 		var _, e = validator.ValidateKeyValue(tr, 0)
-		return validators.JoinErrors(e...)
+		return errors.Join(e...)
 	}, []string{"Some-Key: value", "BREAKING-CHANGE: value"}, []string{}, t)
 }
 

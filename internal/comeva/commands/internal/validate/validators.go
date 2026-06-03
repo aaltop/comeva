@@ -3,13 +3,13 @@
 package validate
 
 import (
-	"errors"
+	baseErrors "errors"
 	"fmt"
 	"os"
 
+	"comeva/internal/errors"
 	exitState "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
-	"comeva/validators"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"
@@ -53,7 +53,7 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 		data, e = os.ReadFile(validatorConfigFile)
 		if e != nil {
 			panic(exitState.ExitState{
-				Reason: errors.New(errorColor.ApplyForef(
+				Reason: baseErrors.New(errorColor.ApplyForef(
 					"Error reading validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR,
@@ -62,7 +62,7 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 		e = messageValidator.UnmarshalYAML(data)
 		if e != nil {
 			panic(exitState.ExitState{
-				Reason: errors.New(errorColor.ApplyForef(
+				Reason: baseErrors.New(errorColor.ApplyForef(
 					"Error unmarshaling validator config in '%s': %v",
 					prog.Args.ValidatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR})
@@ -87,6 +87,6 @@ func (prog *program) validateCommitMessage(message string) (e error) {
 
 	var validator *messageValidation.MessageValidator
 	validator = prog.getMessageValidator()
-	e = validators.JoinErrors(validator.ValidateString(message)...)
+	e = errors.Join(validator.ValidateString(message)...)
 	return e
 }
