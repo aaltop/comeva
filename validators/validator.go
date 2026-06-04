@@ -46,7 +46,7 @@ type validatedContent[T any] struct {
 	Errors  []validatorErrorChild
 }
 
-func (content *ValidatedContent[T]) MarshalJSON() (data []byte, e error) {
+func (content ValidatedContent[T]) MarshalJSON() (data []byte, e error) {
 	var errs = make([]validatorErrorChild, len(content.Errors))
 
 	var temp validatorErrorChild
