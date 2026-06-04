@@ -14,6 +14,8 @@ import (
 	"comeva/internal/utils/flag"
 	"encoding/json"
 	"fmt"
+	baseIo "io"
+	"os"
 )
 
 // program acts as the state of the command.
@@ -35,13 +37,6 @@ func Function(
 
 	extState = exitstate.NewDefaultExitState()
 	var e error
-	var arg *args
-	arg, e = NewArgs()
-	if e != nil {
-		extState.Reason = fmt.Errorf("Error with validate arguments: %w", e)
-		extState.Code = exitstate.PROGRAM_ERROR
-		return
-	}
 
 	var passedLocal passedLocalArgs = *getPassedLocalArgs(flag.PassedFlags(FlagSet))
 
@@ -51,7 +46,14 @@ func Function(
 		Config: *passedConfig,
 	}
 
-	var joinedLocal = joinLocalArguments(arg, conf, allPassed)
+	var _arg *args
+	_arg, e = NewArgs()
+	if e != nil {
+		extState.Reason = fmt.Errorf("Error with validate arguments: %w", e)
+		extState.Code = exitstate.PROGRAM_ERROR
+		return
+	}
+	var joinedLocal = joinLocalArguments(_arg, conf, allPassed)
 
 	var prog = &program{
 		JoinedLocalArgs:  joinedLocal,
@@ -66,7 +68,24 @@ func Function(
 	// ---------------------------------------------------
 
 	var commitMessage string
-	commitMessage, e = io.ReadFileString(arg.CommitFile)
+
+	if joinedLocal.CommitFile == "-" {
+		var data []byte
+		data, e = baseIo.ReadAll(os.Stdin)
+		if e != nil {
+			extState.Reason = fmt.Errorf("Error reading commit file from stdin: %v", e)
+			extState.Code = exitstate.PROGRAM_ERROR
+			return
+		}
+		commitMessage = string(data)
+	} else {
+		commitMessage, e = io.ReadFileString(joinedLocal.CommitFile)
+		if e != nil {
+			extState.Reason = fmt.Errorf("Error reading commit file from file '%v': %v", joinedLocal.CommitFile, e)
+			extState.Code = exitstate.PROGRAM_ERROR
+			return
+		}
+	}
 
 	switch joinedLocal.OutputFormat {
 	case validOutputFormats.Human:

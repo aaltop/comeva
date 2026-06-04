@@ -26,7 +26,7 @@ var flagNames = struct {
 var validatorConfigFile = FlagSet.String(
 	string(flagNames.ValidatorConfigFile), globals.VALIDATOR_CONFIG_PATH,
 	"file path for configuration of validators")
-var commitFile = FlagSet.String(string(flagNames.CommitFile), globals.COMMIT_MESSAGE_PATH, "file path for commit file")
+var commitFile = FlagSet.String(string(flagNames.CommitFile), globals.COMMIT_MESSAGE_PATH, "File path for commit file. The special value '-' indicates stdin, allowing piping.")
 
 // validOutputFormats holds the valid values for the [outputFormat] flag.
 var validOutputFormats = struct {
