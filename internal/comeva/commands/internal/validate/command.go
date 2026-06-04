@@ -70,9 +70,9 @@ func Function(
 
 	switch joinedLocal.OutputFormat {
 	case validOutputFormats.Human:
-		prog.humanOutput(commitMessage)
+		extState = prog.humanOutput(commitMessage)
 	case validOutputFormats.JSON:
-		prog.jsonOutput(commitMessage)
+		extState = prog.jsonOutput(commitMessage)
 	default:
 		extState.Code = exitstate.PROGRAM_ERROR
 		extState.Reason = fmt.Errorf("Unexpected output format '%v', should be one of %v", joinedLocal.OutputFormat, validOutputFormatsSlice)
