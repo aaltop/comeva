@@ -33,8 +33,6 @@ func NewArgs() (arg *args, e error) {
 	return
 }
 
-// var createDocsFlag = FlagSet.String(string(flagNames.CreateDocs), "docs/", "Recreate the docs under the current directory in the passed sub-directory.")
-
 var createDocsFlag docsRoot = docsRoot("./docs/")
 
 var pathFlag = make(path, 0)

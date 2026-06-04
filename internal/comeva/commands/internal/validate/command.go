@@ -12,43 +12,51 @@ import (
 	io "comeva/internal/io"
 	"comeva/internal/io/ansi"
 	"comeva/internal/utils/flag"
-	baseErrors "errors"
+	"encoding/json"
 	"fmt"
 )
 
 // program acts as the state of the command.
 type program struct {
-	Args              *args
-	passedLocalFlags  map[string]bool
-	passedGlobalFlags map[string]bool
-	conf              *config.Config
+	JoinedLocalArgs  *args
+	JoinedGlobalArgs *argus.GlobalFlags
+	Config           *config.Config
+	PassedArgs       *passedArgs
 }
 
-func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
-	var colorSchemes = ansi.BasicColorSchemes
+var colorSchemes = ansi.BasicColorSchemes
+
+func Function(
+	gFlags *argus.GlobalFlags,
+	passedGlobalFlags *argus.PassedGlobalFlags,
+	conf *config.Config,
+	passedConfig *config.PassedConfigArgs,
+) (extState *exitstate.ExitState) {
 
 	extState = exitstate.NewDefaultExitState()
 	var e error
 	var arg *args
 	arg, e = NewArgs()
-	var passedLocalFlags map[string]bool = flag.PassedFlags(FlagSet)
-
-	// SORT OUT FLAGS
-	// ---------------------------------------------------
-
-	// verbosity contains either the verbosity as passed as a flag, or the value
-	// from the config file (or the default value if neither is passed).
-	var verbosity int = gFlags.Verbosity
-	if conf.Verbosity != nil && !passedGlobalFlags[string(argus.GlobalFlagNames.Verbosity)] {
-		verbosity = *conf.Verbosity
+	if e != nil {
+		extState.Reason = fmt.Errorf("Error with validate arguments: %w", e)
+		extState.Code = exitstate.PROGRAM_ERROR
+		return
 	}
 
-	if !passedLocalFlags[string(flagNames.CommitFile)] && conf.CommitFile != nil {
-		arg.CommitFile = *conf.CommitFile
+	var passedLocal passedLocalArgs = *getPassedLocalArgs(flag.PassedFlags(FlagSet))
+
+	var allPassed = &passedArgs{
+		Local:  passedLocal,
+		Global: *passedGlobalFlags,
+		Config: *passedConfig,
 	}
 
-	if !passedLocalFlags[string(flagNames.ValidatorConfigFile)] && conf.ValidatorConfigFile != nil {
-		arg.ValidatorConfigFile = *conf.ValidatorConfigFile
+	var joinedLocal = joinLocalArguments(arg, conf, allPassed)
+
+	var prog = &program{
+		JoinedLocalArgs:  joinedLocal,
+		JoinedGlobalArgs: gFlags,
+		PassedArgs:       allPassed,
 	}
 
 	// SORT OUT FLAGS
@@ -57,22 +65,25 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 	// VALIDATE MESSAGE
 	// ---------------------------------------------------
 
-	var prog *program = &program{}
-	prog.Args = arg
-	prog.passedGlobalFlags = passedGlobalFlags
-	prog.passedLocalFlags = passedLocalFlags
-	prog.conf = conf
-
 	var commitMessage string
 	commitMessage, e = io.ReadFileString(arg.CommitFile)
 
-	if e != nil {
-		extState.Reason = baseErrors.New(colorSchemes.Error.ApplyForef("Error reading commit message file: %v", e))
+	switch joinedLocal.OutputFormat {
+	case validOutputFormats.Human:
+		prog.humanOutput(commitMessage)
+	case validOutputFormats.JSON:
+		prog.jsonOutput(commitMessage)
+	default:
 		extState.Code = exitstate.PROGRAM_ERROR
-		return
+		extState.Reason = fmt.Errorf("Unexpected output format '%v', should be one of %v", joinedLocal.OutputFormat, validOutputFormatsSlice)
 	}
+	return
+}
 
-	if verbosity > globals.VERBOSITY_DEFAULT {
+func (prog *program) humanOutput(commitMessage string) (extState *exitstate.ExitState) {
+	extState = &exitstate.ExitState{}
+	var e error
+	if prog.JoinedGlobalArgs.Verbosity > globals.VERBOSITY_DEFAULT {
 		comevaIo.PrintCommitMessage(commitMessage)
 	}
 	e = prog.validateCommitMessage(commitMessage)
@@ -96,8 +107,18 @@ func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf
 		fmt.Println("No problems found.")
 	}
 
-	// VALIDATE MESSAGE
-	// ===================================================
+	return
+}
 
+func (prog *program) jsonOutput(commitMessage string) (extState *exitstate.ExitState) {
+	extState = &exitstate.ExitState{}
+
+	var validatedContent, e = prog.getValidatedContent(commitMessage)
+	if e != nil {
+		extState.Code = exitstate.VALIDATION_ERROR
+	}
+	var data []byte
+	data = errors.Panic2(json.Marshal(validatedContent))
+	fmt.Println(string(data))
 	return
 }

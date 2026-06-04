@@ -40,7 +40,7 @@ func NewBaseCommand() (baseCommand *Command, e error) {
 
 	baseCommand = errors.Return2(NewCommand(
 		*hlpMsg,
-		func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
+		func(gFlags *args.GlobalFlags, passedGFlags *args.PassedGlobalFlags, conf *config.Config, passedConfig *config.PassedConfigArgs) (extState *exitstate.ExitState) {
 			extState = exitstate.NewDefaultExitState()
 			fmt.Println(hlpMsg.String())
 			return

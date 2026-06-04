@@ -10,6 +10,7 @@ import (
 	"comeva/internal/errors"
 	exitState "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+	"comeva/validators"
 	bodyValidation "comeva/validators/body"
 	headerValidation "comeva/validators/header"
 	messageValidation "comeva/validators/message"
@@ -36,17 +37,16 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 	*messageValidator = *messageValidation.NewDefaultMessageValidator()
 	// if validator settings are provided through a file (if they're not, the only
 	// other option is the standard setup provided below this block)
-	if prog.passedLocalFlags[string(flagNames.ValidatorConfigFile)] || prog.conf.ValidatorConfigFile != nil {
+	if prog.PassedArgs.Local.ValidatorConfigFile || prog.PassedArgs.Config.ValidatorConfigFile {
 
-		var validatorConfigFile string = prog.Args.ValidatorConfigFile
-		if !prog.passedLocalFlags[string(flagNames.ValidatorConfigFile)] {
+		var validatorConfigFile string = prog.JoinedLocalArgs.ValidatorConfigFile
+		if !prog.PassedArgs.Local.ValidatorConfigFile {
 			debugLogger.Debug().Printf(
 				"Using validator config file location '%v' as specified in the config file",
-				*prog.conf.ValidatorConfigFile,
+				validatorConfigFile,
 			)
-			validatorConfigFile = *prog.conf.ValidatorConfigFile
 		} else {
-			debugLogger.Debug().Printf("Using validator config file location '%v' as specified on the command line", prog.Args.ValidatorConfigFile)
+			debugLogger.Debug().Printf("Using validator config file location '%v' as specified on the command line", validatorConfigFile)
 		}
 
 		var data []byte
@@ -55,7 +55,7 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 			panic(exitState.ExitState{
 				Reason: baseErrors.New(errorColor.ApplyForef(
 					"Error reading validator config in '%s': %v",
-					prog.Args.ValidatorConfigFile, e)),
+					validatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR,
 			})
 		}
@@ -64,7 +64,7 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 			panic(exitState.ExitState{
 				Reason: baseErrors.New(errorColor.ApplyForef(
 					"Error unmarshaling validator config in '%s': %v",
-					prog.Args.ValidatorConfigFile, e)),
+					validatorConfigFile, e)),
 				Code: exitState.PROGRAM_ERROR})
 		}
 		return messageValidator
@@ -85,8 +85,17 @@ func (prog *program) getMessageValidator() (messageValidator *messageValidation.
 
 func (prog *program) validateCommitMessage(message string) (e error) {
 
-	var validator *messageValidation.MessageValidator
-	validator = prog.getMessageValidator()
+	var validator = prog.getMessageValidator()
 	e = errors.Join(validator.ValidateString(message)...)
 	return e
+}
+
+func (prog *program) getValidatedContent(message string) (
+	validatedContent validators.ValidatedContent[messageValidation.ValidatedMessage],
+	e error,
+) {
+	var validator = prog.getMessageValidator()
+	e = errors.Join(validator.ValidateString(message)...)
+	validatedContent = validator.ValidatedContent()
+	return
 }

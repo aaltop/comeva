@@ -14,12 +14,12 @@ import (
 )
 
 type program struct {
-	gFlags            *args.GlobalFlags
-	passedGlobalFlags map[string]bool
-	conf              *config.Config
+	JoinedGlobalFlags *args.GlobalFlags
+	PassedGlobalFlags *args.PassedGlobalFlags
+	Conf              *config.Config
 }
 
-func Function(gFlags *args.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
+func Function(gFlags *args.GlobalFlags, passedGlobalFlags *args.PassedGlobalFlags, conf *config.Config, passedConfig *config.PassedConfigArgs) (extState *exitstate.ExitState) {
 	extState = exitstate.NewDefaultExitState()
 	var e error
 
@@ -29,7 +29,7 @@ func Function(gFlags *args.GlobalFlags, passedGlobalFlags map[string]bool, conf 
 		extState.Code = exitstate.PROGRAM_ERROR
 	}
 
-	var prog = &program{gFlags: gFlags, passedGlobalFlags: passedGlobalFlags, conf: conf}
+	var prog = &program{JoinedGlobalFlags: gFlags, PassedGlobalFlags: passedGlobalFlags, Conf: conf}
 
 	var configFileName = globals.CONFIG_PATH
 	e = prog.createConfigFile(configFileName)

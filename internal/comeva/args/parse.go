@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
@@ -60,6 +61,12 @@ type GlobalFlags struct {
 	LoggingLevel int
 }
 
+// GlobalPassedFlags reports which flags of [GlobalFlags] were passed; see
+// [GetPassedGlobalFlags].
+type PassedGlobalFlags struct {
+	Help, Verbosity, ConfigFile, LoggingLevel bool
+}
+
 func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
 	return &GlobalFlags{}
 }
@@ -68,7 +75,7 @@ func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
 // arguments after flag parsing, as well as a map denoting which global flags
 // were passed; see [GlobalFlagNames] for help with accessing the latter. `args`
 // should be the command line arguments excluding the program name.
-func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[string]bool, remainingArgs []string) {
+func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags *PassedGlobalFlags, remainingArgs []string) {
 	globalFlagSet.Usage = func() {}
 	var e error
 
@@ -83,7 +90,8 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags map[strin
 		).Panic()
 	}
 
-	passedFlags = flagUtils.PassedFlags(globalFlagSet)
+	passedFlags = &PassedGlobalFlags{}
+	passedFlags = GetPassedGlobalFlags(flagUtils.PassedFlags(globalFlagSet))
 
 	gFlags = NewDefaultGlobalFlags()
 	gFlags.Help = *helpFlag
@@ -119,7 +127,7 @@ type CommandArgs struct {
 	// Global flags passed to program. Come before commands.
 	GlobalFlags *GlobalFlags
 	// PassedGlobalFlags denote which global flags were passed; see [GlobalFlagNames] for help with accessing.
-	PassedGlobalFlags map[string]bool
+	PassedGlobalFlags *PassedGlobalFlags
 	// Commands passed to program.
 	Commands []string
 	// The rest of the flags passed to the program, expected to be
@@ -148,5 +156,38 @@ func ParseCommandArgs(args []string) (cmdArgs *CommandArgs) {
 // of the global flags.
 func GlobalFlagDefaults() (defaults string) {
 	defaults = flagUtils.GetDefaults(globalFlagSet)
+	return
+}
+
+func GetPassedGlobalFlags(global map[string]bool) (passed *PassedGlobalFlags) {
+	passed = &PassedGlobalFlags{}
+	passed.ConfigFile = global[string(GlobalFlagNames.ConfigFile)]
+	passed.Help = global[string(GlobalFlagNames.Help)]
+	passed.LoggingLevel = global[string(GlobalFlagNames.LoggingLevel)]
+	passed.Verbosity = global[string(GlobalFlagNames.Verbosity)]
+	return
+}
+
+// joinGlobalArguments joins the global flags and configuration file values.
+func JoinGlobalArguments(
+	globalArgs *GlobalFlags,
+	conf *config.Config,
+	passedGlobal *PassedGlobalFlags,
+	passedConfig *config.PassedConfigArgs,
+) (joined *GlobalFlags) {
+	joined = &GlobalFlags{}
+	joined.Help = globalArgs.Help
+	joined.Verbosity = globalArgs.Verbosity
+	joined.ConfigFile = globalArgs.ConfigFile
+	joined.LoggingLevel = globalArgs.LoggingLevel
+
+	if !passedGlobal.Verbosity && passedConfig.Verbosity {
+		joined.Verbosity = *conf.Verbosity
+	}
+
+	if !passedGlobal.LoggingLevel && passedConfig.LoggingLevel {
+		joined.LoggingLevel = *conf.LoggingLevel
+	}
+
 	return
 }

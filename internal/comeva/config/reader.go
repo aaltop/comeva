@@ -23,6 +23,12 @@ type Config struct {
 	LoggingLevel *int
 }
 
+// PassedConfigArgs reports which parameters were specified in
+// the configuration file; see [GetPassed].
+type PassedConfigArgs struct {
+	ValidatorConfigFile, CommitFile, Verbosity, LoggingLevel bool
+}
+
 // NewDefaultConfig creates the base Config.
 func NewDefaultConfig() (config *Config) {
 	config = &Config{}
@@ -110,5 +116,14 @@ func (config *Config) MarshalYAML() (data []byte, e error) {
 // UnmarshalYAMLFile unmarshals the [Config] from the file.
 func (config *Config) UnmarshalYAMLFile(filename string) (e error) {
 	e = yaml.UnMarshalFromFile(filename, config)
+	return
+}
+
+func GetPassed(conf *Config) (passed *PassedConfigArgs) {
+	passed = &PassedConfigArgs{}
+	passed.CommitFile = (conf.CommitFile != nil)
+	passed.LoggingLevel = (conf.LoggingLevel != nil)
+	passed.ValidatorConfigFile = (conf.ValidatorConfigFile != nil)
+	passed.Verbosity = (conf.Verbosity != nil)
 	return
 }

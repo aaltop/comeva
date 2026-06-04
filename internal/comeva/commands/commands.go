@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"comeva/internal/comeva/args"
+	"comeva/internal/comeva/commands/internal"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
@@ -163,7 +164,22 @@ Arguments:
 `, msg.synopsis, msg.description, ioUtils.IndentLinesWithString(msg.usage.String(), 1, "| "), ioUtils.IndentLinesWithString(msg.options.String(), 1, "| "))
 }
 
-type CommandFunc func(gFlags *args.GlobalFlags, passedGLobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState)
+// CommandFunc represents a function that implements functionality of a command.
+//
+// Of note is `joinedGlobalFlags`, which should be created using
+// [internal.JoinGlobalArguments], and therefore already is a joining of global
+// flags passed on the command line and any configuration file values that match
+// those flags. `conf` need not therefore be joined with `joinedGlobalFlags`,
+// nor is it advisable to use its global flag equivalent values. It may still
+// contain values that are specific to certain commands, or values that may also
+// only be passable through the config (which would likely be values that are
+// more difficult to represent on the command line, like nested maps).
+type CommandFunc func(
+	joinedGlobalFlags *args.GlobalFlags, // see [internal.JoinGlobalArguments].
+	passedGLobalFlags *args.PassedGlobalFlags,
+	conf *config.Config,
+	passedConfig *config.PassedConfigArgs,
+) (extState *exitstate.ExitState)
 type CommandList map[string]*Command
 
 // Command represents a command line command.
@@ -185,7 +201,7 @@ type Command struct {
 
 func NewDefaultCommand() (com *Command) {
 	com = &Command{}
-	com.function = func(gFlags *args.GlobalFlags, passedGFlags map[string]bool, conf *config.Config) (e *exitstate.ExitState) {
+	com.function = func(JoinedGlobalArgs *args.GlobalFlags, passedGFlags *args.PassedGlobalFlags, conf *config.Config, passedConfig *config.PassedConfigArgs) (e *exitstate.ExitState) {
 		return
 	}
 	com.subCommands = make(CommandList)
@@ -235,7 +251,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	if cmdArgs.GlobalFlags.ConfigFile != "" {
 		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
 		if e != nil {
-			if !cmdArgs.PassedGlobalFlags[string(args.GlobalFlagNames.ConfigFile)] {
+			if !cmdArgs.PassedGlobalFlags.ConfigFile {
 				globals.ErrorLogger.Warning().Printf("Error reading config file: %v\n", e)
 			} else {
 				extState.Code = exitstate.PROGRAM_ERROR
@@ -244,15 +260,15 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 			}
 		}
 	}
-	var loggingLevel = cmdArgs.GlobalFlags.LoggingLevel
-	if !cmdArgs.PassedGlobalFlags[string(args.GlobalFlagNames.LoggingLevel)] && conf.LoggingLevel != nil {
-		loggingLevel = *conf.LoggingLevel
-	}
+
+	var passedConfig = config.GetPassed(conf)
+	var joinedGlobal = internal.JoinGlobalArguments(cmdArgs.GlobalFlags, conf, cmdArgs.PassedGlobalFlags, passedConfig)
+	var loggingLevel = joinedGlobal.LoggingLevel
 
 	var debug = true
 	globals.Init(globals.InitArgs{LoggingLevel: &loggingLevel, Debug: &debug})
 
-	return com.function(cmdArgs.GlobalFlags, cmdArgs.PassedGlobalFlags, conf)
+	return com.function(joinedGlobal, cmdArgs.PassedGlobalFlags, conf, passedConfig)
 }
 
 // GetSubCommand returns a subcommand of this command and further

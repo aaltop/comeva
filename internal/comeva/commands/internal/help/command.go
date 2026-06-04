@@ -14,7 +14,7 @@ type program struct {
 	Args *args
 }
 
-func Function(gFlags *argus.GlobalFlags, passedGlobalFlags map[string]bool, conf *config.Config) (extState *exitstate.ExitState) {
+func Function(gFlags *argus.GlobalFlags, passedGlobalFlags *argus.PassedGlobalFlags, conf *config.Config, passedConfig *config.PassedConfigArgs) (extState *exitstate.ExitState) {
 	extState = exitstate.NewDefaultExitState()
 	var e error
 

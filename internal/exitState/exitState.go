@@ -1,6 +1,7 @@
 package exitstate
 
 import (
+	"comeva/internal/io/ansi"
 	"fmt"
 	"os"
 )
@@ -53,7 +54,7 @@ func (extState *ExitState) Panic() {
 // Reason for exiting, if any.
 func (extState *ExitState) Exit() {
 	if extState.Reason != nil {
-		fmt.Fprintln(os.Stderr, extState.Reason)
+		fmt.Fprintln(os.Stderr, ansi.BasicColorSchemes.Error.ApplyFore(extState.Reason.Error()))
 	}
 	os.Exit(int(extState.Code))
 }
