@@ -228,7 +228,7 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	if possibleKey == "BREAKING-CHANGE" {
-		return nil
+		return
 	}
 
 	var tempErrs = append(errs, InvalidKeyError{
@@ -246,15 +246,15 @@ func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint)
 
 	var _, ok = validator.requiredKeys.Get(possibleKey)
 	if ok {
-		return nil
+		return
 	}
 
 	if len(validator.optionalKeys) == 0 {
-		return nil
+		return
 	}
 	_, ok = validator.optionalKeys.Get(possibleKey)
 	if ok {
-		return nil
+		return
 	}
 	return tempErrs
 }
@@ -294,8 +294,9 @@ func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bo
 
 // ValidateKeyValue validates a trailer key-value pair. A key-value pair does
 // not, by the validation definition used here, continue to another line.
-// The [Trailer] `t` will have empty strings for its values if a match is not
-// found.
+// The [Trailer] `t` will have empty strings for its values if a regexp match
+// is not found, but may otherwise have non-empty strings for its values even
+// if errors are returned.
 func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, errs []validators.ValidatorErrorChild) {
 	var ve validators.ValidatorErrorChild
 
@@ -403,7 +404,6 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 		validator.Errors = errs
 	}()
 
-	var trailer Trailer = Trailer{}
 	var keyValueErrors, continuationErrors []validators.ValidatorErrorChild
 	for scner.Scan() {
 		var line string = scner.Text()
@@ -413,37 +413,22 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 
 		tempTrailer, keyValueErrors = validator.ValidateKeyValue(line, scner.TimesScanned)
 
-		if len(keyValueErrors) == 0 {
-			// valid key-value pair
-			trailer = tempTrailer
+		if tempTrailer.Key != "" {
+			// resembles a key-value pair, but with potentially invalid values
+			// for the key (or value, if that is implemented)
+
+			// add regardless, the errors will tell whether it's incorrect
 			validator.Trailers = append(validator.Trailers, tempTrailer)
+			errs = append(errs, keyValueErrors...)
 		} else {
-			// invalid key-value pair
+			// not possible to be key-value pair
 
-			// might be continuation instead
-			if tempTrailer.Key == "" && trailer.Key != "" {
-				continuationErrors = validator.ValidateValueContinuation(line, scner.TimesScanned)
-				if len(continuationErrors) == 0 {
-					// is continuation, just add it to the value as-is
-					validator.Trailers[len(validator.Trailers)-1].Value += "\n" + line
-					continue
-				} else {
-					// not continuation
-					errs = append(errs, continuationErrors...)
-				}
+			// because it wasn't validated as a key-value pair, assume that
+			// it is a continuation that has a problem
+			validator.Trailers[len(validator.Trailers)-1].Value += "\n" + line
+			continuationErrors = validator.ValidateValueContinuation(line, scner.TimesScanned)
+			errs = append(errs, continuationErrors...)
 
-			} else {
-				// First scanned line was not a valid key-value pair
-				errs = append(errs, keyValueErrors...)
-			}
-
-			// reset trailer so that next loop will not test for line continuation
-			// if a valid key-value pair is not found
-			//
-			// Consequently, looping will next continue until a valid key-value pair
-			// is found -- at which point the above testing is performed again --
-			// or end-of-content is reached
-			trailer = Trailer{}
 		}
 
 	}
