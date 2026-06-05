@@ -75,3 +75,15 @@ func (e InvalidVerbError) Error() string {
 func (e InvalidVerbError) GetReason() string {
 	return fmt.Sprintf("Invalid verb '%s', should be one of %v", e.Received, e.Expected)
 }
+
+type ColonSpaceError struct {
+	validators.ValidatorError
+}
+
+func (e ColonSpaceError) Error() string {
+	return e.ErrorString(e.GetReason())
+}
+
+func (e ColonSpaceError) GetReason() string {
+	return "Colon and space not found"
+}

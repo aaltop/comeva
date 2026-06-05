@@ -6,12 +6,13 @@ import (
 	baseErrors "errors"
 	"fmt"
 	"io"
-	"regexp"
+	baseRegexp "regexp"
 	"slices"
 	"strings"
 	"text/template"
 
 	"comeva/internal/errors"
+	"comeva/internal/regexp"
 	"comeva/internal/utils"
 	"comeva/validators"
 )
@@ -26,7 +27,7 @@ var regexGroups = struct {
 	Description: "description",
 }
 
-func createHeaderRegex() *regexp.Regexp {
+func createHeaderRegex() *baseRegexp.Regexp {
 
 	var parts = struct {
 		Type, Scope, Breaking, ColonSpace, Description string
@@ -41,7 +42,7 @@ func createHeaderRegex() *regexp.Regexp {
 	var tmpl = errors.Panic2(template.New("").Parse(`\A{{.Type}}?{{.Scope}}?{{.Breaking}}?{{.ColonSpace}}?{{.Description}}?\z`))
 	var builder = &strings.Builder{}
 	errors.Panic(tmpl.Execute(builder, &parts))
-	return regexp.MustCompile(builder.String())
+	return baseRegexp.MustCompile(builder.String())
 
 }
 
@@ -94,7 +95,7 @@ func (h Header) String() string {
 // HeaderValidator validates a commit message's header.
 type HeaderValidator struct {
 	// Regexp used to pick out parts of the header.
-	header *regexp.Regexp
+	header *baseRegexp.Regexp
 	// Accepted words for type.
 	types []string
 	// Accepted words for scope.
@@ -369,16 +370,18 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 		return
 	}
 
+	var subMatches = regexp.GetSubMatches(validator.header, possibleHeader)
+
 	errs = append(errs, validator.ValidateLength(possibleHeader)...)
 
-	var typ = matches[validator.header.SubexpIndex(regexGroups.Type)]
+	var typ = subMatches[regexGroups.Type].Match
 	errs = append(errs, validator.ValidateType(typ)...)
 	validator.Header.Type = typ
 
-	var breaking = matches[validator.header.SubexpIndex(regexGroups.Breaking)]
+	var breaking = subMatches[regexGroups.Breaking].Match
 	validator.Header.Breaking = breaking == "!"
 
-	var scope = matches[validator.header.SubexpIndex(regexGroups.Scope)]
+	var scope = subMatches[regexGroups.Scope].Match
 	// scope is assumed to be at least one character, so empty scopes
 	// mean that the content was matched correctly but that the scope group
 	// did not exist, which is fine
@@ -387,7 +390,17 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 	}
 	validator.Header.Scope = scope
 
-	var desc = matches[validator.header.SubexpIndex(regexGroups.Description)]
+	var colonSpace = subMatches[regexGroups.ColonSpace].Match
+	if colonSpace != ": " {
+		errs = append(errs, ColonSpaceError{
+			ValidatorError: validators.ValidatorError{
+				MessagePart: "Header",
+				Line:        1,
+			},
+		})
+	}
+
+	var desc = subMatches[regexGroups.Description].Match
 	var description Description
 	description, tempErrs = validator.ValidateDescription(desc)
 	errs = append(errs, tempErrs...)
