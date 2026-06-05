@@ -3,25 +3,52 @@
 package header
 
 import (
-	"errors"
+	baseErrors "errors"
 	"fmt"
 	"io"
 	"regexp"
 	"slices"
 	"strings"
+	"text/template"
 
+	"comeva/internal/errors"
 	"comeva/internal/utils"
 	"comeva/validators"
 )
 
-const typeRegex = `(?<type>.+?)`
+var regexGroups = struct {
+	Type, Scope, Breaking, ColonSpace, Description string
+}{
+	Type:        "type",
+	Scope:       "scope",
+	Breaking:    "breaking",
+	ColonSpace:  "colon_space",
+	Description: "description",
+}
 
-// scope is optional, surrounded by parentheses
-const scope = `(?:\((?<scope>.+)\))?`
+func createHeaderRegex() *regexp.Regexp {
+
+	var parts = struct {
+		Type, Scope, Breaking, ColonSpace, Description string
+	}{
+		Type:        fmt.Sprintf(`(?<%s>[^(!:]+)`, regexGroups.Type),
+		Scope:       fmt.Sprintf(`(?:\((?<%s>.+?)\))`, regexGroups.Scope),
+		Breaking:    fmt.Sprintf(`(?<%s>!)`, regexGroups.Breaking),
+		ColonSpace:  fmt.Sprintf(`(?<%s>: )`, regexGroups.ColonSpace),
+		Description: fmt.Sprintf(`(?<%s>.+)`, regexGroups.Description),
+	}
+
+	var tmpl = errors.Panic2(template.New("").Parse(`\A{{.Type}}?{{.Scope}}?{{.Breaking}}?{{.ColonSpace}}?{{.Description}}?\z`))
+	var builder = &strings.Builder{}
+	errors.Panic(tmpl.Execute(builder, &parts))
+	return regexp.MustCompile(builder.String())
+
+}
 
 // headerRegex can be used to for checking for valid commit message
 // headers.
-var headerRegex = regexp.MustCompile(fmt.Sprintf(`\A%s%s(?<breaking>!)?: (?<description>.+)\z`, typeRegex, scope))
+// var headerRegex = regexp.MustCompile(fmt.Sprintf(`\A%s?%s?(?<breaking>!)?(?<colon_space>: )?(?<description>.+)?\z`, typeRegex, scope))
+var headerRegex = createHeaderRegex()
 
 // Description represents the description part of a commit message
 type Description struct {
@@ -274,7 +301,7 @@ func (validator *HeaderValidator) ValidateType(typ string) (errs []validators.Va
 func (validator *HeaderValidator) processDescription(description string) (desc Description, e error) {
 	var verb, content, found = strings.Cut(description, " ")
 	if !found {
-		return desc, errors.New("no space found in description")
+		return desc, baseErrors.New("no space found in description")
 	}
 
 	desc.Verb = verb
@@ -344,14 +371,14 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 
 	errs = append(errs, validator.ValidateLength(possibleHeader)...)
 
-	var typ = matches[validator.header.SubexpIndex("type")]
+	var typ = matches[validator.header.SubexpIndex(regexGroups.Type)]
 	errs = append(errs, validator.ValidateType(typ)...)
 	validator.Header.Type = typ
 
-	var breaking = matches[validator.header.SubexpIndex("breaking")]
+	var breaking = matches[validator.header.SubexpIndex(regexGroups.Breaking)]
 	validator.Header.Breaking = breaking == "!"
 
-	var scope = matches[validator.header.SubexpIndex("scope")]
+	var scope = matches[validator.header.SubexpIndex(regexGroups.Scope)]
 	// scope is assumed to be at least one character, so empty scopes
 	// mean that the content was matched correctly but that the scope group
 	// did not exist, which is fine
@@ -360,7 +387,7 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 	}
 	validator.Header.Scope = scope
 
-	var desc = matches[validator.header.SubexpIndex("description")]
+	var desc = matches[validator.header.SubexpIndex(regexGroups.Description)]
 	var description Description
 	description, tempErrs = validator.ValidateDescription(desc)
 	errs = append(errs, tempErrs...)
