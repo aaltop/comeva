@@ -164,11 +164,14 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (errs
 		validator.Errors = append(validator.Errors, tempErrs...)
 		errs = append(errs, tempErrs...)
 
-		// Need to check here separately as required keys would not
-		// have been checked. Could technically just check whether there
-		// are any required keys? Would be faster, and probably less error
-		// prone. Does give the proper error message this way, though.
-		errs = append(errs, validator.TrailerValidator.EnsureRequiredKeys()...)
+		// Needs to be passed to Errors here because just running
+		// EnsureRequiredKeys doesn't actually put the errors in the field,
+		// but ValidatedContent needs the errors to be there.
+		// Maybe have each validator method replace the errors? Not perfect,
+		// but generally the actual full validation should be run anyway, and
+		// not individual validation methods.
+		validator.TrailerValidator.Errors = validator.TrailerValidator.EnsureRequiredKeys()
+		errs = append(errs, validator.TrailerValidator.Errors...)
 
 		return
 	}
