@@ -2,15 +2,17 @@ package trailer
 
 import (
 	"bufio"
-	"comeva/internal/utils"
-	"comeva/validators"
 	"errors"
 	"fmt"
 	"io"
 	"maps"
-	"regexp"
+	baseRegexp "regexp"
 	"slices"
 	"strings"
+
+	"comeva/internal/regexp"
+	"comeva/internal/utils"
+	"comeva/validators"
 )
 
 // Key represents a trailer key.
@@ -36,7 +38,7 @@ type KeyMap map[string]Key
 var keyChars string = `[A-Za-z]+(?:-[A-Za-z]+)*`
 
 // keyRegex matches a trailer's key.
-var keyRegex = regexp.MustCompile(fmt.Sprintf(`\A%s\z`, keyChars))
+var keyRegex = baseRegexp.MustCompile(fmt.Sprintf(`\A%s\z`, keyChars))
 
 // Set adds or replaces an item in the map.
 func (keyMap *KeyMap) Set(key, info string) (e error) {
@@ -56,7 +58,7 @@ func (keyMap *KeyMap) Get(key string) (value Key, ok bool) {
 // TrailerValidator validates a git commit message's trailer block.
 type TrailerValidator struct {
 	// continuationRegex matches any continuation lines.
-	continuationRegex *regexp.Regexp
+	continuationRegex *baseRegexp.Regexp
 	// requiredKeys contains the keys that are required to be found in any commit.
 	// If this is empty, there are no required keys.
 	requiredKeys KeyMap
@@ -157,8 +159,8 @@ func (validator *TrailerValidator) Reset() {
 // newContinuationRegex creates a new continuationRegex for TrailerValidator
 // based on the new value given as continuationIndent. Should only be
 // called by SetContinuationIndent outside testing setups.
-func newContinuationRegex(continuationIndent uint) (regex *regexp.Regexp, e error) {
-	regex, e = regexp.Compile(fmt.Sprintf(`\A[ ]{%d}\S[^\r\n]*\n?$`, continuationIndent))
+func newContinuationRegex(continuationIndent uint) (regex *baseRegexp.Regexp, e error) {
+	regex, e = baseRegexp.Compile(fmt.Sprintf(`\A[ ]{%d}\S[^\r\n]*\n?$`, continuationIndent))
 	return
 }
 
@@ -166,7 +168,7 @@ func newContinuationRegex(continuationIndent uint) (regex *regexp.Regexp, e erro
 // based on the new value given as continuationIndent. Should only be
 // called by SetContinuationIndent outside testing setups.
 func (validator *TrailerValidator) setContinuationRegex(continuationIndent uint) (e error) {
-	var regex *regexp.Regexp
+	var regex *baseRegexp.Regexp
 	regex, e = newContinuationRegex(continuationIndent)
 	if e == nil {
 		validator.continuationRegex = regex
@@ -223,28 +225,29 @@ func (validator *TrailerValidator) GetKeys() (keys []string) {
 	return
 }
 
-// ValidateKey checks whether the key of a trailer is valid (is included in the
+// validateKey checks whether the key of a trailer is valid (is included in the
 // required or optional keys or is BREAKING-CHANGE). Returns [InvalidKeyError] if `e` is non-nil.
-func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint) (errs []validators.ValidatorErrorChild) {
+func (validator *TrailerValidator) validateKey(possibleKey regexp.SubMatch, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
-	if possibleKey == "BREAKING-CHANGE" {
+	if possibleKey.Match == "BREAKING-CHANGE" {
 		return
 	}
 
 	var tempErrs = append(errs, InvalidKeyError{
 		Expected: validator.GetKeys(),
-		Received: possibleKey,
+		Received: possibleKey.Match,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Trailer,
 			Line:        lineNum,
+			Cols:        possibleKey.Cols,
 		},
 	})
 
-	if !keyRegex.MatchString(possibleKey) {
+	if !keyRegex.MatchString(possibleKey.Match) {
 		return tempErrs
 	}
 
-	var _, ok = validator.requiredKeys.Get(possibleKey)
+	var _, ok = validator.requiredKeys.Get(possibleKey.Match)
 	if ok {
 		return
 	}
@@ -252,14 +255,14 @@ func (validator *TrailerValidator) ValidateKey(possibleKey string, lineNum uint)
 	if len(validator.optionalKeys) == 0 {
 		return
 	}
-	_, ok = validator.optionalKeys.Get(possibleKey)
+	_, ok = validator.optionalKeys.Get(possibleKey.Match)
 	if ok {
 		return
 	}
 	return tempErrs
 }
 
-func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
+func (validator *TrailerValidator) validateLineLength(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
 	if lower == 0 && upper == 0 {
@@ -280,7 +283,7 @@ func (validator *TrailerValidator) ValidateLineLength(line string, lineNum uint)
 }
 
 // keyValueRegex matches the first (and possibly only) line of a git trailer.
-var keyValueRegex = regexp.MustCompile(fmt.Sprintf(
+var keyValueRegex = baseRegexp.MustCompile(fmt.Sprintf(
 	`\A%s: %s`,
 	fmt.Sprintf(`(?<key>%s)`, keyChars),
 	`(?<value>\S[^\r\n$]*)`))
@@ -292,12 +295,12 @@ func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bo
 	return keyValueRegex.MatchString(possibleKeyValue)
 }
 
-// ValidateKeyValue validates a trailer key-value pair. A key-value pair does
+// validateKeyValue validates a trailer key-value pair. A key-value pair does
 // not, by the validation definition used here, continue to another line.
 // The [Trailer] `t` will have empty strings for its values if a regexp match
 // is not found, but may otherwise have non-empty strings for its values even
 // if errors are returned.
-func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, errs []validators.ValidatorErrorChild) {
+func (validator *TrailerValidator) validateKeyValue(possibleKeyValue string, lineNum uint) (t Trailer, errs []validators.ValidatorErrorChild) {
 	var ve validators.ValidatorErrorChild
 
 	// keyValueRegex might encounter something with a correct key, but no value
@@ -306,8 +309,9 @@ func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lin
 	// to hint that something that could be a key-value pair (the key was
 	// correct) was encountered.
 
-	var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
-	if matches == nil {
+	// var matches = keyValueRegex.FindStringSubmatch(possibleKeyValue)
+	var matches = regexp.GetSubMatches(keyValueRegex, possibleKeyValue)
+	if matches["key"].Cols == [2]int{-1, 1} {
 		ve = InvalidKeyValueError{
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Trailer,
@@ -321,18 +325,18 @@ func (validator *TrailerValidator) ValidateKeyValue(possibleKeyValue string, lin
 
 	// there isn't really any hard rules as to what the value in a trailer should
 	// be, so not particularly testing that here.
-	t.Key, t.Value = matches[keyValueRegex.SubexpIndex("key")], matches[keyValueRegex.SubexpIndex("value")]
-	errs = append(errs, validator.ValidateKey(t.Key, lineNum)...)
+	t.Key, t.Value = matches["key"].Match, matches["value"].Match
+	errs = append(errs, validator.validateKey(matches["key"], lineNum)...)
 
 	return
 }
 
-// ValidateValueContinuation checks whether the line can be a valid continuation
+// validateValueContinuation checks whether the line can be a valid continuation
 // of the value of a key-value pair.
-func (validator *TrailerValidator) ValidateValueContinuation(possibleContinuation string, lineNum uint) (errs []validators.ValidatorErrorChild) {
+func (validator *TrailerValidator) validateValueContinuation(possibleContinuation string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 	var ve validators.ValidatorErrorChild
 
-	errs = append(errs, validator.ValidateLineLength(possibleContinuation, lineNum)...)
+	errs = append(errs, validator.validateLineLength(possibleContinuation, lineNum)...)
 
 	if !validator.continuationRegex.MatchString(possibleContinuation) {
 
@@ -409,9 +413,11 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 		var line string = scner.Text()
 		var tempTrailer Trailer
 
-		errs = append(errs, validator.ValidateLineLength(line, scner.TimesScanned)...)
+		keyValueErrors, continuationErrors = make([]validators.ValidatorErrorChild, 0), make([]validators.ValidatorErrorChild, 0)
 
-		tempTrailer, keyValueErrors = validator.ValidateKeyValue(line, scner.TimesScanned)
+		errs = append(errs, validator.validateLineLength(line, scner.TimesScanned)...)
+
+		tempTrailer, keyValueErrors = validator.validateKeyValue(line, scner.TimesScanned)
 
 		if tempTrailer.Key != "" {
 			// resembles a key-value pair, but with potentially invalid values
@@ -420,15 +426,17 @@ func (validator *TrailerValidator) ValidateScannerWithLine(scanner *bufio.Scanne
 			// add regardless, the errors will tell whether it's incorrect
 			validator.Trailers = append(validator.Trailers, tempTrailer)
 			errs = append(errs, keyValueErrors...)
+
 		} else {
 			// not possible to be key-value pair
 
+			var prev = &(validator.Trailers[len(validator.Trailers)-1])
+
 			// because it wasn't validated as a key-value pair, assume that
 			// it is a continuation that has a problem
-			validator.Trailers[len(validator.Trailers)-1].Value += "\n" + line
-			continuationErrors = validator.ValidateValueContinuation(line, scner.TimesScanned)
+			prev.Value += "\n" + line
+			continuationErrors = validator.validateValueContinuation(line, scner.TimesScanned)
 			errs = append(errs, continuationErrors...)
-
 		}
 
 	}

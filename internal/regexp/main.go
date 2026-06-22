@@ -18,9 +18,12 @@ type SubMatch struct {
 func GetSubMatches(re *baseRegexp.Regexp, s string) (matches map[string]SubMatch) {
 	var stringMatches = re.FindStringSubmatch(s)
 	var indexMatches = re.FindStringSubmatchIndex(s)
+	matches = make(map[string]SubMatch)
+	if stringMatches == nil {
+		return
+	}
 
 	var ind int
-	matches = make(map[string]SubMatch)
 	for _, name := range re.SubexpNames() {
 		ind = re.SubexpIndex(name)
 		if name == "" {

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	errors "comeva/internal/errors"
+	"comeva/internal/regexp"
 	testingUtils "comeva/internal/testing"
 )
 
@@ -81,6 +82,10 @@ func InvalidTrailerBlock() []string {
 		fmt.Sprintf("%s: this is fine\n\n%s: but there shouldn't be gaps between trailers", ValidKey()[0], ValidKey()[1]))
 }
 
+func toSubMatch(value string) regexp.SubMatch {
+	return regexp.SubMatch{Match: value}
+}
+
 // RunTestValues runs validation function `f` against valid and invalid sets of
 // values `valid` and `invalid`.
 func RunTestValues(f func(tr string) error, valid, invalid []string, t *testing.T) {
@@ -151,7 +156,7 @@ func TestValidateKeyValue(t *testing.T) {
 	var validator = FixtureValidator()
 
 	var validation = func(tr string) error {
-		var _, e = validator.ValidateKeyValue(tr, 1)
+		var _, e = validator.validateKeyValue(tr, 1)
 		return errors.Join(e...)
 	}
 
@@ -163,7 +168,7 @@ func TestValidateKeyFormat(t *testing.T) {
 	var validator = FixtureValidator()
 
 	var validation = func(key string) error {
-		return errors.Join(validator.ValidateKey(key, 1)...)
+		return errors.Join(validator.validateKey(toSubMatch(key), 1)...)
 	}
 
 	RunTestValues(validation, ValidKey(), InvalidKey(), t)
@@ -179,23 +184,23 @@ func TestOptionalKey(t *testing.T) {
 
 	var validKey = ValidKey()
 
-	var key = validKey[0]
-	if e := validator.ValidateKey(key, 1); e != nil {
-		t.Errorf("Unexpected error for valid key %s: %v", key, e)
+	var key = toSubMatch(validKey[0])
+	if e := validator.validateKey(key, 1); e != nil {
+		t.Errorf("Unexpected error for valid key %s: %v", key.Match, e)
 	}
 
-	var optionalKey = validKey[1]
-	validator.optionalKeys.Set(optionalKey, "")
-	if e := validator.ValidateKey(key, 1); e == nil {
-		t.Errorf("Invalid key '%s' was found to be valid", key)
+	var optionalKey = toSubMatch(validKey[1])
+	validator.optionalKeys.Set(optionalKey.Match, "")
+	if e := validator.validateKey(key, 1); e == nil {
+		t.Errorf("Invalid key '%s' was found to be valid", key.Match)
 	}
-	if e := validator.ValidateKey(optionalKey, 1); e != nil {
-		t.Errorf("Unexpected error for valid key %s: %v", optionalKey, e)
+	if e := validator.validateKey(optionalKey, 1); e != nil {
+		t.Errorf("Unexpected error for valid key %s: %v", optionalKey.Match, e)
 	}
 
 	// does not error if a key set as optional is not present in trailer
-	validator.optionalKeys.Set(key, "")
-	if e := validator.ValidateString(fmt.Sprintf("%s: dummy key", key)); e != nil {
+	validator.optionalKeys.Set(key.Match, "")
+	if e := validator.ValidateString(fmt.Sprintf("%s: dummy key", key.Match)); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
 
@@ -207,24 +212,24 @@ func TestRequiredKey(t *testing.T) {
 	var validator = FixtureValidator()
 	var validKey = ValidKey()
 
-	var key = validKey[0]
-	if e := validator.ValidateKey(key, 1); e != nil {
-		t.Errorf("Unexpected error for valid key %s: %v", key, e)
+	var key = toSubMatch(validKey[0])
+	if e := validator.validateKey(key, 1); e != nil {
+		t.Errorf("Unexpected error for valid key %s: %v", key.Match, e)
 	}
 
-	var requiredKey = validKey[1]
-	validator.requiredKeys.Set(requiredKey, "")
+	var requiredKey = toSubMatch(validKey[1])
+	validator.requiredKeys.Set(requiredKey.Match, "")
 	// because one key is not specified as required and there are no
 	// optional keys, while the other is required, both should be valid
-	for _, k := range []string{key, requiredKey} {
-		if e := validator.ValidateKey(k, 1); e != nil {
-			t.Errorf("Unexpected error for valid key %s: %v", k, e)
+	for _, k := range []regexp.SubMatch{key, requiredKey} {
+		if e := validator.validateKey(k, 1); e != nil {
+			t.Errorf("Unexpected error for valid key %s: %v", k.Match, e)
 		}
 	}
 
 	// required key HAS to be in the trailer
-	if e := validator.ValidateString(fmt.Sprintf("%s: non-required key", key)); e == nil {
-		t.Errorf("Expected error for missing required key %s", requiredKey)
+	if e := validator.ValidateString(fmt.Sprintf("%s: non-required key", key.Match)); e == nil {
+		t.Errorf("Expected error for missing required key %s", requiredKey.Match)
 	}
 
 }
@@ -267,19 +272,19 @@ func TestValidateValueContinuation(t *testing.T) {
 
 	for i, whitespaceAndExpected := range whitespaces {
 		t.Run(fmt.Sprintf("whitespace_only_%d", i), func(t *testing.T) {
-			if e := validator.ValidateValueContinuation(whitespaceAndExpected.WhiteSpace, 1); e == nil {
+			if e := validator.validateValueContinuation(whitespaceAndExpected.WhiteSpace, 1); e == nil {
 				t.Errorf("Continuation should not be solely whitespace")
 			}
 		})
 		t.Run(fmt.Sprintf("indent_%d", i), func(t *testing.T) {
 			var continuation = fmt.Sprintf("%s%s", whitespaceAndExpected.WhiteSpace, cont)
-			if e := validator.ValidateValueContinuation(continuation, 1); (e == nil) == whitespaceAndExpected.ExpectError {
+			if e := validator.validateValueContinuation(continuation, 1); (e == nil) == whitespaceAndExpected.ExpectError {
 				t.Errorf("Expected error: %t Got error: %v", whitespaceAndExpected.ExpectError, e)
 			}
 		})
 	}
 
-	if e := validator.ValidateValueContinuation("  Correct indentation, but again, the line should be limited in the number of columns", 1); e == nil {
+	if e := validator.validateValueContinuation("  Correct indentation, but again, the line should be limited in the number of columns", 1); e == nil {
 		t.Error("Invalid line with too many characters was found to be valid")
 	}
 
@@ -392,12 +397,12 @@ func TestDefaultBounds(t *testing.T) {
 	var validator = FixtureValidator()
 
 	var trailer = ValidKey()[0] + ": A value that is far too long to exist on just this one line I'm fairly sure"
-	if e := validator.ValidateLineLength(trailer, 1); e == nil {
+	if e := validator.validateLineLength(trailer, 1); e == nil {
 		t.Error("Invalid, too long line was found to be valid")
 	}
 
 	validator.SetLineLength(0, 0)
-	if e := validator.ValidateLineLength(trailer, 1); e != nil {
+	if e := validator.validateLineLength(trailer, 1); e != nil {
 		t.Errorf("Unexpected error: %v", e)
 	}
 }
@@ -431,7 +436,7 @@ func TestBreakingChangeAlwaysValid(t *testing.T) {
 	validator.optionalKeys.Set("Some-Key", "")
 
 	RunTestValues(func(tr string) error {
-		var _, e = validator.ValidateKeyValue(tr, 0)
+		var _, e = validator.validateKeyValue(tr, 0)
 		return errors.Join(e...)
 	}, []string{"Some-Key: value", "BREAKING-CHANGE: value"}, []string{}, t)
 }
