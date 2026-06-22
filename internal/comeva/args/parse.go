@@ -126,7 +126,7 @@ func SplitCommandsAndFlags(args []string) (cmds []string, flgs []string) {
 type CommandArgs struct {
 	// Global flags passed to program. Come before commands.
 	GlobalFlags *GlobalFlags
-	// PassedGlobalFlags denote which global flags were passed; see [GlobalFlagNames] for help with accessing.
+	// PassedGlobalFlags denote which global flags were passed.
 	PassedGlobalFlags *PassedGlobalFlags
 	// Commands passed to program.
 	Commands []string

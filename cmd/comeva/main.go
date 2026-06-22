@@ -28,6 +28,11 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 	if sub != nil {
 		extState = sub.Execute(cmdArgs)
 	} else {
+		if cmdArgs.PassedGlobalFlags.Help {
+			fmt.Println(base.Help())
+			return
+		}
+		// not unsuccessful per se, so don't set exitState
 		globals.ErrorLogger.Error().Printf("Sub-command '%v' not found.", cmdArgs.Commands)
 		fmt.Println(base.Help())
 	}
