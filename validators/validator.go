@@ -55,6 +55,7 @@ func (content ValidatedContent[T]) MarshalJSON() (data []byte, e error) {
 		temp.Reason = err.GetReason()
 		temp.Line = err.GetLine()
 		temp.MessagePart = err.GetMessagePart()
+		temp.Cols = err.GetCols()
 		errs[i] = temp
 	}
 
@@ -83,6 +84,7 @@ type validatorErrorChild struct {
 	Reason      string
 	MessagePart messagePart
 	Line        uint
+	Cols        [2]int
 }
 
 func (child validatorErrorChild) Error() string {
@@ -99,4 +101,8 @@ func (child validatorErrorChild) GetLine() uint {
 
 func (child validatorErrorChild) GetReason() string {
 	return child.Reason
+}
+
+func (child validatorErrorChild) GetCols() [2]int {
+	return child.Cols
 }

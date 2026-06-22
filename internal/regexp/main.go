@@ -5,7 +5,7 @@ import (
 )
 
 type SubMatch struct {
-	// Match is the matched string. Empty if not match (or the matched empty).
+	// Match is the matched string. Empty if not match (or the regex matched the empty sring).
 	Match string
 	// Cols contains the start and end indices (columns) of the match. If the
 	// indices are minus one (-1), no match was found.

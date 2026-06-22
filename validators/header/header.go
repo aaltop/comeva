@@ -268,31 +268,33 @@ func (validator *HeaderValidator) ValidateLength(possibleHeader string) (errs []
 }
 
 // Validate the scope (of Conventional commits syntax).
-func (validator *HeaderValidator) ValidateScope(scope string) (errs []validators.ValidatorErrorChild) {
-	if len(validator.scopes) == 0 || slices.Contains(validator.scopes, scope) {
+func (validator *HeaderValidator) validateScope(scope regexp.SubMatch) (errs []validators.ValidatorErrorChild) {
+	if len(validator.scopes) == 0 || slices.Contains(validator.scopes, scope.Match) {
 		return
 	}
 	return append(errs, InvalidScopeError{
 		Expected: validator.scopes,
-		Received: scope,
+		Received: scope.Match,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Header,
 			Line:        1,
+			Cols:        scope.Cols,
 		},
 	})
 }
 
 // Validate the type (of Conventional commits syntax).
-func (validator *HeaderValidator) ValidateType(typ string) (errs []validators.ValidatorErrorChild) {
-	if len(validator.types) == 0 || slices.Contains(validator.types, typ) {
+func (validator *HeaderValidator) validateType(typ regexp.SubMatch) (errs []validators.ValidatorErrorChild) {
+	if len(validator.types) == 0 || slices.Contains(validator.types, typ.Match) {
 		return
 	}
 	return append(errs, InvalidTypeError{
 		Expected: validator.types,
-		Received: typ,
+		Received: typ.Match,
 		ValidatorError: validators.ValidatorError{
 			MessagePart: validators.MessageParts.Header,
 			Line:        1,
+			Cols:        typ.Cols,
 		},
 	})
 }
@@ -311,17 +313,18 @@ func (validator *HeaderValidator) processDescription(description string) (desc D
 }
 
 // Validate the description of a commit message.
-func (validator *HeaderValidator) ValidateDescription(description string) (desc Description, errs []validators.ValidatorErrorChild) {
+func (validator *HeaderValidator) validateDescription(description regexp.SubMatch) (desc Description, errs []validators.ValidatorErrorChild) {
 	var e error
-	desc, e = validator.processDescription(description)
+	desc, e = validator.processDescription(description.Match)
 	if e != nil ||
-		validator.ValidateVerb(desc.Verb) != nil {
+		validator.validateVerb(desc.Verb) != nil {
 		errs = append(errs, InvalidDescriptionError{
-			Received: description,
+			Received: description.Match,
 			Verbs:    validator.verbs,
 			ValidatorError: validators.ValidatorError{
 				MessagePart: validators.MessageParts.Header,
 				Line:        1,
+				Cols:        description.Cols,
 			},
 		})
 	}
@@ -329,7 +332,7 @@ func (validator *HeaderValidator) ValidateDescription(description string) (desc 
 }
 
 // Validate the verb of a description of a commit message.
-func (validator *HeaderValidator) ValidateVerb(verb string) (errs []validators.ValidatorErrorChild) {
+func (validator *HeaderValidator) validateVerb(verb string) (errs []validators.ValidatorErrorChild) {
 	if len(validator.verbs) == 0 || slices.Contains(validator.verbs, verb) {
 		return
 	}
@@ -374,21 +377,21 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 
 	errs = append(errs, validator.ValidateLength(possibleHeader)...)
 
-	var typ = subMatches[regexGroups.Type].Match
-	errs = append(errs, validator.ValidateType(typ)...)
-	validator.Header.Type = typ
+	var typ = subMatches[regexGroups.Type]
+	errs = append(errs, validator.validateType(typ)...)
+	validator.Header.Type = typ.Match
 
 	var breaking = subMatches[regexGroups.Breaking].Match
 	validator.Header.Breaking = breaking == "!"
 
-	var scope = subMatches[regexGroups.Scope].Match
+	var scope = subMatches[regexGroups.Scope]
 	// scope is assumed to be at least one character, so empty scopes
 	// mean that the content was matched correctly but that the scope group
 	// did not exist, which is fine
-	if scope != "" {
-		errs = append(errs, validator.ValidateScope(scope)...)
+	if scope.Match != "" {
+		errs = append(errs, validator.validateScope(scope)...)
 	}
-	validator.Header.Scope = scope
+	validator.Header.Scope = scope.Match
 
 	var colonSpace = subMatches[regexGroups.ColonSpace].Match
 	if colonSpace != ": " {
@@ -400,9 +403,9 @@ func (validator *HeaderValidator) ValidateString(possibleHeader string) (errs []
 		})
 	}
 
-	var desc = subMatches[regexGroups.Description].Match
+	var desc = subMatches[regexGroups.Description]
 	var description Description
-	description, tempErrs = validator.ValidateDescription(desc)
+	description, tempErrs = validator.validateDescription(desc)
 	errs = append(errs, tempErrs...)
 	validator.Header.Description = description
 

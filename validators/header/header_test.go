@@ -1,6 +1,7 @@
 package header
 
 import (
+	"comeva/internal/regexp"
 	testingUtils "comeva/internal/testing"
 	"comeva/validators"
 	"fmt"
@@ -77,6 +78,10 @@ func InvalidFormattingHeader() []string {
 	var header = HeaderConstructor{ValidFormatting: false}
 	var valids = FixtureValidTypeScopeVerb()
 	return header.Header(valids[0], valids[1], valids[2])
+}
+
+func toSubMatch(value string) regexp.SubMatch {
+	return regexp.SubMatch{Match: value}
 }
 
 // The Validate method works.
@@ -169,21 +174,21 @@ func TestValidateLength(t *testing.T) {
 // ValidateScope validates correctly.
 func TestValidateScope(t *testing.T) {
 	var valids = FixtureValidTypeScopeVerb()
-	var valid, invalid = valids[1], "backend"
+	var valid, invalid = toSubMatch(valids[1]), toSubMatch("backend")
 
 	var validator = FixtureValidator()
-	if validator.ValidateScope(valid) != nil {
-		t.Errorf("Valid scope %s was found to be invalid for scopes %v", valid, validator.scopes)
+	if validator.validateScope(valid) != nil {
+		t.Errorf("Valid scope %s was found to be invalid for scopes %v", valid.Match, validator.scopes)
 	}
 
-	if validator.ValidateScope(invalid) == nil {
-		t.Errorf("Invalid scope %s was found to be valid for scopes %v", invalid, validator.scopes)
+	if validator.validateScope(invalid) == nil {
+		t.Errorf("Invalid scope %s was found to be valid for scopes %v", invalid.Match, validator.scopes)
 	}
 
 	var emptyValidator = NewDefaultHeaderValidator()
-	for _, v := range []string{valid, invalid} {
-		if emptyValidator.ValidateType(v) != nil {
-			t.Errorf("Scope '%s' was found to be invalid where all scopes should be valid", v)
+	for _, v := range []regexp.SubMatch{valid, invalid} {
+		if emptyValidator.validateType(v) != nil {
+			t.Errorf("Scope '%s' was found to be invalid where all scopes should be valid", v.Match)
 		}
 	}
 
@@ -192,21 +197,21 @@ func TestValidateScope(t *testing.T) {
 // ValidateType validates correctly.
 func TestValidateType(t *testing.T) {
 	var valids = FixtureValidTypeScopeVerb()
-	var valid, invalid = valids[0], "imnotype"
+	var valid, invalid = toSubMatch(valids[0]), toSubMatch("imnotype")
 
 	var validator = FixtureValidator()
-	if validator.ValidateType(valid) != nil {
-		t.Errorf("Valid type %s was found to be invalid for types %v", valid, validator.types)
+	if validator.validateType(valid) != nil {
+		t.Errorf("Valid type %s was found to be invalid for types %v", valid.Match, validator.types)
 	}
 
-	if validator.ValidateType(invalid) == nil {
-		t.Errorf("Invalid type %s was found to be valid for types %v", valid, validator.types)
+	if validator.validateType(invalid) == nil {
+		t.Errorf("Invalid type %s was found to be valid for types %v", valid.Match, validator.types)
 	}
 
 	var emptyValidator = NewDefaultHeaderValidator()
-	for _, v := range []string{valid, invalid} {
-		if emptyValidator.ValidateType(v) != nil {
-			t.Errorf("Type '%s' was found to be invalid where all types should be valid", v)
+	for _, v := range []regexp.SubMatch{valid, invalid} {
+		if emptyValidator.validateType(v) != nil {
+			t.Errorf("Type '%s' was found to be invalid where all types should be valid", v.Match)
 		}
 	}
 }
@@ -214,14 +219,14 @@ func TestValidateType(t *testing.T) {
 // ValidateDescription validates correctly.
 func TestValidateDescription(t *testing.T) {
 	var validator = FixtureValidator()
-	var valid = "Add new feature"
-	var invalidNoVerb = "No verb starting this description"
+	var valid = toSubMatch("Add new feature")
+	var invalidNoVerb = toSubMatch("No verb starting this description")
 	var err []validators.ValidatorErrorChild
-	if _, err = validator.ValidateDescription(valid); len(err) != 0 {
-		t.Errorf("Valid description '%s' was found to be invalid", valid)
+	if _, err = validator.validateDescription(valid); len(err) != 0 {
+		t.Errorf("Valid description '%s' was found to be invalid", valid.Match)
 	}
 	var invalidFormat = "Invalid description '%s' was found to be valid"
-	if _, err = validator.ValidateDescription(invalidNoVerb); len(err) == 0 {
+	if _, err = validator.validateDescription(invalidNoVerb); len(err) == 0 {
 		t.Errorf(invalidFormat, invalidNoVerb)
 	}
 }
@@ -232,17 +237,17 @@ func TestValidateVerb(t *testing.T) {
 	var valids = FixtureValidTypeScopeVerb()
 	var valid, invalid = valids[2], "Triangulate"
 
-	if validator.ValidateVerb(valid) != nil {
+	if validator.validateVerb(valid) != nil {
 		t.Errorf("Valid verb '%s' was found to be invalid", valid)
 	}
 
-	if validator.ValidateVerb(invalid) == nil {
+	if validator.validateVerb(invalid) == nil {
 		t.Errorf("Invalid verb '%s' was not found to be invalid", invalid)
 	}
 
 	var emptyValidator = NewDefaultHeaderValidator()
 	for _, v := range []string{valid, invalid} {
-		if emptyValidator.ValidateVerb(v) != nil {
+		if emptyValidator.validateVerb(v) != nil {
 			t.Errorf("Verb '%s' was found to be invalid where all verbs should be valid", v)
 		}
 	}

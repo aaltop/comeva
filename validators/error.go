@@ -19,6 +19,7 @@ var MessageParts = struct {
 type IValidatorError interface {
 	GetMessagePart() messagePart
 	GetLine() uint
+	GetCols() [2]int
 }
 
 // ValidatorErrorChild represents children of [ValidatorError].
@@ -40,6 +41,7 @@ func ToValidatorErrorChild(e error) ValidatorErrorChild {
 type ValidatorError struct {
 	MessagePart messagePart
 	Line        uint
+	Cols        [2]int
 }
 
 func (vali ValidatorError) GetMessagePart() messagePart {
@@ -48,6 +50,10 @@ func (vali ValidatorError) GetMessagePart() messagePart {
 
 func (vali ValidatorError) GetLine() uint {
 	return vali.Line
+}
+
+func (vali ValidatorError) GetCols() [2]int {
+	return vali.Cols
 }
 
 // ErrorString constructs an error message that includes the line and
