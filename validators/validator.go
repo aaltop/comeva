@@ -1,8 +1,9 @@
 package validators
 
 import (
-	"encoding/json"
 	"io"
+
+	"comeva/internal/json"
 )
 
 type Validator[T any] interface {

@@ -265,7 +265,7 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 	var joinedGlobal = internal.JoinGlobalArguments(cmdArgs.GlobalFlags, conf, cmdArgs.PassedGlobalFlags, passedConfig)
 	var loggingLevel = joinedGlobal.LoggingLevel
 
-	var debug = true
+	var debug = false
 	globals.Init(globals.InitArgs{LoggingLevel: &loggingLevel, Debug: &debug})
 
 	return com.function(joinedGlobal, cmdArgs.PassedGlobalFlags, conf, passedConfig)

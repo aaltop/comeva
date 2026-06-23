@@ -11,8 +11,9 @@ import (
 	"comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+
+	"comeva/internal/json"
 	"comeva/internal/utils/flag"
-	"encoding/json"
 	"fmt"
 	baseIo "io"
 	"os"
