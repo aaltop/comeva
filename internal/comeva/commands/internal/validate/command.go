@@ -3,19 +3,20 @@
 package validate
 
 import (
+	"bufio"
 	argus "comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
 	comevaIo "comeva/internal/comeva/io"
 	"comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
-	io "comeva/internal/io"
 	"comeva/internal/io/ansi"
 	"comeva/internal/utils/flag"
 	"encoding/json"
 	"fmt"
 	baseIo "io"
 	"os"
+	"strings"
 )
 
 // program acts as the state of the command.
@@ -69,32 +70,71 @@ func Function(
 
 	var commitMessage string
 
+	// get a reader for the message content
+	var messageReader baseIo.Reader
 	if joinedLocal.CommitFile == "-" {
-		var data []byte
-		data, e = baseIo.ReadAll(os.Stdin)
-		if e != nil {
-			extState.Reason = fmt.Errorf("Error reading commit file from stdin: %v", e)
-			extState.Code = exitstate.PROGRAM_ERROR
-			return
-		}
-		commitMessage = string(data)
+		messageReader = os.Stdin
 	} else {
-		commitMessage, e = io.ReadFileString(joinedLocal.CommitFile)
+		messageReader, e = os.Open(joinedLocal.CommitFile)
 		if e != nil {
-			extState.Reason = fmt.Errorf("Error reading commit file from file '%v': %v", joinedLocal.CommitFile, e)
+			extState.Reason = fmt.Errorf("Error opening commit file '%v' for reading: %w", joinedLocal.CommitFile, e)
 			extState.Code = exitstate.PROGRAM_ERROR
 			return
 		}
 	}
 
+	// messageHandler operates on the commit message depending on passed flags.
+	var messageHandler func(msg string) *exitstate.ExitState
+	// get the correct handler for the message
 	switch joinedLocal.OutputFormat {
 	case validOutputFormats.Human:
-		extState = prog.humanOutput(commitMessage)
+		messageHandler = prog.humanOutput
 	case validOutputFormats.JSON:
-		extState = prog.jsonOutput(commitMessage)
+		messageHandler = prog.jsonOutput
 	default:
 		extState.Code = exitstate.PROGRAM_ERROR
 		extState.Reason = fmt.Errorf("Unexpected output format '%v', should be one of %v", joinedLocal.OutputFormat, validOutputFormatsSlice)
+		return
+	}
+
+	// assume one message (no separator)
+	if joinedLocal.CommitSeparator == nil {
+		var data []byte
+		data, e = baseIo.ReadAll(messageReader)
+		if e != nil {
+			extState.Code = exitstate.PROGRAM_ERROR
+			if joinedLocal.CommitFile == "-" {
+				extState.Reason = fmt.Errorf("Error reading commit file from stdin: %v", e)
+			} else {
+				extState.Reason = fmt.Errorf("Error reading commit file from file '%v': %v", joinedLocal.CommitFile, e)
+			}
+			return
+		}
+		commitMessage = string(data)
+		*extState = *messageHandler(commitMessage)
+	} else {
+		var commitMessageGenerator = make(chan string)
+		go getCommitMessages(messageReader, *joinedLocal.CommitSeparator, commitMessageGenerator)
+		var msg string
+		var tempExtState *exitstate.ExitState
+		for msg = range commitMessageGenerator {
+			tempExtState = messageHandler(msg)
+			switch tempExtState.Code {
+			case exitstate.SUCCESSFUL:
+				// these are fine, continue
+			case exitstate.VALIDATION_ERROR:
+				extState.Code = exitstate.VALIDATION_ERROR
+				if extState.Reason == nil {
+					extState.Reason = tempExtState.Reason
+				} else {
+					extState.Reason = fmt.Errorf("%w\n%w", extState.Reason, tempExtState.Reason)
+				}
+			default:
+				*extState = *tempExtState
+				return
+			}
+		}
+
 	}
 	return
 }
@@ -140,4 +180,29 @@ func (prog *program) jsonOutput(commitMessage string) (extState *exitstate.ExitS
 	data = errors.Panic2(json.Marshal(validatedContent))
 	fmt.Println(string(data))
 	return
+}
+
+func getCommitMessages(reader baseIo.Reader, separator string, c chan string) {
+	defer func() {
+		close(c)
+	}()
+
+	var scanner = bufio.NewScanner(reader)
+	var builder = strings.Builder{}
+	var after string
+	var found bool
+	for scanner.Scan() {
+		after, found = strings.CutPrefix(scanner.Text(), separator)
+		if found && after == "" {
+			c <- builder.String()
+			builder.Reset()
+		} else {
+			fmt.Fprintln(&builder, scanner.Text())
+		}
+	}
+
+	// if messages didn't end in separator, output the final message
+	if builder.String() != "" {
+		c <- builder.String()
+	}
 }

@@ -18,7 +18,8 @@ any possible defaults are used instead.`,
 	)
 
 	var options = newDefaultFlagOptions()
-	options.AddGroup("Local", flagUtils.GetDefaults(validate.FlagSet))
+	options.AddGroup("Optional", flagUtils.GetDefaults(validate.OptionalFlagSet))
+	options.AddGroup("Boolean", flagUtils.GetDefaults(validate.BooleanFlagSet))
 
 	var helpMessage, _ = NewHelpMessage(
 		"Validate a commit message.",

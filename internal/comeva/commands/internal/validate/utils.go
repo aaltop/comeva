@@ -9,7 +9,7 @@ import (
 var debugLogger = globals.DebugLogger
 
 type passedLocalArgs struct {
-	ValidatorConfigFile, CommitFile, OutputFormat bool
+	ValidatorConfigFile, CommitFile, OutputFormat, CommitSeparator bool
 }
 
 func getPassedLocalArgs(passedMap map[string]bool) (passed *passedLocalArgs) {
@@ -17,6 +17,7 @@ func getPassedLocalArgs(passedMap map[string]bool) (passed *passedLocalArgs) {
 	passed.ValidatorConfigFile = passedMap[string(flagNames.ValidatorConfigFile)]
 	passed.CommitFile = passedMap[string(flagNames.CommitFile)]
 	passed.OutputFormat = passedMap[string(flagNames.OutputFormat)]
+	passed.CommitSeparator = passedMap[string(flagNames.CommitSeparator)]
 	return
 }
 
@@ -38,6 +39,7 @@ func joinLocalArguments(
 	joined.CommitFile = arg.CommitFile
 	joined.OutputFormat = arg.OutputFormat
 	joined.ValidatorConfigFile = arg.ValidatorConfigFile
+	joined.CommitSeparator = arg.CommitSeparator
 
 	if !passedArgs.Local.CommitFile && passedArgs.Config.CommitFile {
 		arg.CommitFile = *conf.CommitFile

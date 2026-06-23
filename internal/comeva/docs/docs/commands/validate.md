@@ -9,6 +9,15 @@ based on the validator configuration. It will return with [an exit code of 2](in
 if it encounters a validation issue. If no validation issue is encountered and
 no error occurs during program execution, the exit code will be 0.
 
+Multiple commit messages may be validated at once using the 'commit-separator' argument.
+Passing this value changes the program to attempt processing multiple commits from the
+passed in file, assuming that these commits are separated in the file by the passed
+separator value. Particularly useful for parsing the entire git log history for further
+processing, for example:
+```sh
+git log --format=format:"%B-|-" | comeva validate --commit-file "-" --output-format json --commit-separator "-|-" > comeva_output.txt
+```
+
 ## Output format
 
 The output format can be controlled using the 'output-format' argument, which
@@ -56,8 +65,10 @@ are of the following format:
 - Errors (`[]`)
     - MessagePart (`string`, "Header"|"Body"|"Trailer"|"")
     - Line (`uint`)
+    - Cols (`[2]int`)
     - Reason (`string`)
 
 **MessagePart** tells in which part of a message the problem was considered to be,
 **Line** tells on which line in the message the problem was found (0 means no line
-specified), and **Reason** describes the problem in a free-form way.
+specified), **Cols** tells on which columns the error was (when `Cols[0]` and `Cols[1]` are
+equal, the columns are unspecified), and **Reason** describes the problem in a free-form way.
