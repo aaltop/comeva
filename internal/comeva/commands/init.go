@@ -12,6 +12,7 @@ func NewInitCommand() (initCommand *Command, e error) {
 	hlpMsgUsage.AddExample("init", "Use default values to initialise.")
 	var hlpMsg *HelpMessage
 	var flagOptions = newDefaultFlagOptions()
+	flagOptions.AddGroupFlagSet("Optional/Boolean", initt.FlagSet)
 	hlpMsg, e = NewHelpMessage(
 		"Initialise directory state related to the program.",
 		`Creates any missing configuration files in the current directory and fills them with
@@ -25,5 +26,7 @@ default values.`,
 		initt.Function,
 		make(CommandList),
 	)
+
+	initCommand.CommandFlags = initt.FlagSet
 	return
 }

@@ -4,6 +4,7 @@ import (
 	argus "comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
+	"comeva/internal/utils/flag"
 )
 
 var debugLogger = globals.DebugLogger
@@ -12,6 +13,12 @@ type passedLocalArgs struct {
 	ValidatorConfigFile, CommitFile, OutputFormat, CommitSeparator bool
 }
 
+// using this to retain the import of the local 'flag' package, so the comment
+// references actually refer to the correct stuff
+var _ = flag.Combine
+
+// getPassedLocalArgs reports which of the local arguments were passed. see
+// [flag.PassedFlags] for `passedMap`.
 func getPassedLocalArgs(passedMap map[string]bool) (passed *passedLocalArgs) {
 	passed = &passedLocalArgs{}
 	passed.ValidatorConfigFile = passedMap[string(flagNames.ValidatorConfigFile)]
@@ -42,11 +49,11 @@ func joinLocalArguments(
 	joined.CommitSeparator = arg.CommitSeparator
 
 	if !passedArgs.Local.CommitFile && passedArgs.Config.CommitFile {
-		arg.CommitFile = *conf.CommitFile
+		joined.CommitFile = *conf.CommitFile
 	}
 
 	if !passedArgs.Local.ValidatorConfigFile && passedArgs.Config.ValidatorConfigFile {
-		arg.ValidatorConfigFile = *conf.ValidatorConfigFile
+		joined.ValidatorConfigFile = *conf.ValidatorConfigFile
 	}
 
 	return

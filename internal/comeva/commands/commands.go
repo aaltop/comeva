@@ -14,6 +14,7 @@ import (
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
+	flagUtils "comeva/internal/utils/flag"
 	ioUtils "comeva/internal/utils/io"
 	"comeva/internal/yaml"
 )
@@ -100,6 +101,12 @@ func (flagOpt *FlagOptions) AddGroup(name, description string) (e error) {
 		*flagOpt = append(*flagOpt, *group)
 	}
 	return
+}
+
+// AddGroupFlagSet adds new [FlagGroup]s to the options, based on the details set on
+// the passed [flag.FlagSet].
+func (flagOpt *FlagOptions) AddGroupFlagSet(name string, flagSet *flag.FlagSet) (e error) {
+	return flagOpt.AddGroup(name, flagUtils.GetDefaults(flagSet))
 }
 
 func (flagOpt FlagOptions) String() string {
@@ -247,9 +254,11 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 		return
 	}
 
-	var conf = config.NewDefaultConfig()
+	// attempt reading local config
+
+	var localConf = config.NewDefaultConfig()
 	if cmdArgs.GlobalFlags.ConfigFile != "" {
-		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, conf)
+		e = yaml.UnMarshalFromFile(cmdArgs.GlobalFlags.ConfigFile, localConf)
 		if e != nil {
 			if !cmdArgs.PassedGlobalFlags.ConfigFile {
 				globals.ErrorLogger.Warning().Printf("Error reading config file: %v\n", e)
@@ -261,6 +270,22 @@ func (com *Command) Execute(cmdArgs *args.CommandArgs) (extState *exitstate.Exit
 		}
 	}
 
+	// attempt reading global config
+
+	var globalConf = config.NewConfigWithDefaults()
+	var globalConfigVars *globals.ConfigVariables
+	globalConfigVars, e = globals.NewGlobalConfigVariables()
+	if e != nil {
+		extState.Code = exitstate.PROGRAM_ERROR
+		extState.Reason = e
+		return
+	}
+	e = yaml.UnMarshalFromFile(globalConfigVars.ConfigPath, globalConf)
+	if e != nil {
+		globals.ErrorLogger.Warning().Printf("Error reading global config file: %v\n", e)
+	}
+
+	var conf = config.Join(*globalConf, *localConf)
 	var passedConfig = config.GetPassed(conf)
 	var joinedGlobal = internal.JoinGlobalArguments(cmdArgs.GlobalFlags, conf, cmdArgs.PassedGlobalFlags, passedConfig)
 	var loggingLevel = joinedGlobal.LoggingLevel

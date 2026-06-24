@@ -119,6 +119,8 @@ func (config *Config) UnmarshalYAMLFile(filename string) (e error) {
 	return
 }
 
+// GetPassed reports for each configuration value whether it was passed in
+// the config.
 func GetPassed(conf *Config) (passed *PassedConfigArgs) {
 	passed = &PassedConfigArgs{}
 	passed.CommitFile = (conf.CommitFile != nil)
@@ -126,4 +128,24 @@ func GetPassed(conf *Config) (passed *PassedConfigArgs) {
 	passed.ValidatorConfigFile = (conf.ValidatorConfigFile != nil)
 	passed.Verbosity = (conf.Verbosity != nil)
 	return
+}
+
+// Join joins the two configs, replacing any values of `conf1` with those specified in
+// `conf2`. A 'specified' value is generally determined by [GetPassed], usually being
+// a value that is non-nil.
+func Join(conf1, conf2 Config) (joined *Config) {
+	var conf2Passed = GetPassed(&conf2)
+	if conf2Passed.CommitFile {
+		conf1.CommitFile = conf2.CommitFile
+	}
+	if conf2Passed.LoggingLevel {
+		conf1.LoggingLevel = conf2.LoggingLevel
+	}
+	if conf2Passed.ValidatorConfigFile {
+		conf1.ValidatorConfigFile = conf2.ValidatorConfigFile
+	}
+	if conf2Passed.Verbosity {
+		conf1.Verbosity = conf2.Verbosity
+	}
+	return &conf1
 }

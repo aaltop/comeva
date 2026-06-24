@@ -58,6 +58,8 @@ functionality of the flag would be pointless).
 
 ## General behaviour
 
+### Exit states
+
 The program utilises four exit states:
 
 - successful
@@ -75,6 +77,20 @@ The program utilises four exit states:
 - uncaught error
     - exit code 3. The program encountered an unexpected error that could not
     be handled.
+
+### Argument priority
+
+Arguments can be passed from a number of places. The arguments are parsed in the
+following order (in descending order of priority):
+
+1. Command line arguments
+2. Local configuration (e.g. `./.comeva/*`)
+3. Global configuration (e.g. `/home/<user>/.config/comeva/*` on Linux)
+
+See [the init command](../commands/init.md) for how to create the configuration setup
+in the local and global locations. Not all arguments may be passable as command line
+arguments, nor all as configuration (i.e. the set of command line arguments is not
+necessarily a subset of the configuration file arguments nor vice versa).
 
 ## Parsing behaviour motivation
 

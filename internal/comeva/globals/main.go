@@ -3,19 +3,27 @@ package globals
 
 import (
 	"comeva/internal/logging"
-	"errors"
+	baseErrors "errors"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // CONFIG_BASE_PATH is the base path of the config directory for the program.
 const CONFIG_BASE_PATH string = "./.comeva/"
 
+// VALIDATOR_CONFIG_NAME is the default name for the validator configuration file.
+const VALIDATOR_CONFIG_NAME = "validator.yaml"
+
 // VALIDATOR_CONFIG_PATH is the default path for the validator configuration file.
-const VALIDATOR_CONFIG_PATH = CONFIG_BASE_PATH + "validator.yaml"
+const VALIDATOR_CONFIG_PATH = CONFIG_BASE_PATH + VALIDATOR_CONFIG_NAME
+
+// CONFIG_NAME is the default name for the configuration file.
+const CONFIG_NAME = "config.yaml"
 
 // CONFIG_PATH is the default path for the configuration file.
-const CONFIG_PATH = CONFIG_BASE_PATH + "config.yaml"
+const CONFIG_PATH = CONFIG_BASE_PATH + CONFIG_NAME
 
 // COMMIT_MESSAGE_PATH is the default path for the git commit message file.
 const COMMIT_MESSAGE_PATH = "./git_commit.txt"
@@ -54,7 +62,7 @@ type InitArgs struct {
 func Init(args InitArgs) {
 
 	if initialized {
-		panic(errors.New("Already initialised"))
+		panic(baseErrors.New("Already initialised"))
 	}
 	initialized = true
 
@@ -69,4 +77,26 @@ func Init(args InitArgs) {
 		ErrorLogger.SetLevel(&level)
 	}
 
+}
+
+type ConfigVariables struct {
+	BasePath, ConfigPath, ValidatorConfigPath string
+}
+
+// NewGlobalConfigVariables returns the variables related to the default global
+// configuration.
+func NewGlobalConfigVariables() (paths *ConfigVariables, e error) {
+	var base string
+	base, e = os.UserConfigDir()
+	if e != nil {
+		e = fmt.Errorf("Error getting user config directory: %v", e)
+		return
+	}
+	base = filepath.Join(base, "comeva")
+	paths = &ConfigVariables{
+		BasePath:            base,
+		ConfigPath:          filepath.Join(base, CONFIG_NAME),
+		ValidatorConfigPath: filepath.Join(base, VALIDATOR_CONFIG_NAME),
+	}
+	return
 }
