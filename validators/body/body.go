@@ -82,9 +82,9 @@ func (validator *BodyValidator) Equal(other *BodyValidator) bool {
 	return validator.lineLength.Equal(other.lineLength)
 }
 
-// ValidateLine returns a non-nil error if the passed line
+// validateLine returns a non-nil error if the passed line
 // does not fulfill the requirements of a commit message's body's line.
-func (validator *BodyValidator) ValidateLine(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
+func (validator *BodyValidator) validateLine(line string, lineNum uint) (errs []validators.ValidatorErrorChild) {
 
 	// for both at zero, don't check length
 	var lower, upper uint = validator.lineLength.Lower, validator.lineLength.Upper
@@ -181,12 +181,13 @@ func (validator *BodyValidator) ValidateScannerWithLine(scanner *bufio.Scanner, 
 	// idea of what changed and why the change was made (with further details
 	// available by looking at the diffs), and that this is done
 	// in a clear, not terribly verbose way.
+
 	var body []string
 	for {
 
 		// processing the first line requires the odd looping here
 		body = append(body, line)
-		errs = append(errs, validator.ValidateLine(line, scner.TimesScanned)...)
+		errs = append(errs, validator.validateLine(line, scner.TimesScanned)...)
 
 		if !scner.Scan() {
 			break

@@ -108,17 +108,17 @@ func TestValidateLine(t *testing.T) {
 
 	var constructor = &BodyConstructor{}
 
-	if e := validator.ValidateLine(constructor.Line(80), 1); e != nil {
+	if e := validator.validateLine(constructor.Line(80), 1); e != nil {
 		t.Error("Valid line was found to be invalid")
 	}
 
-	if e := validator.ValidateLine(constructor.Line(81), 1); e == nil {
+	if e := validator.validateLine(constructor.Line(81), 1); e == nil {
 		t.Error("Invalid length line was found to be valid")
 	}
 
 	// Bounds with 0,0 should mean no length check
 	validator.lineLength = utils.Bounds[uint]{}
-	if e := validator.ValidateLine(constructor.Line(81), 1); e != nil {
+	if e := validator.validateLine(constructor.Line(81), 1); e != nil {
 		t.Errorf("Line of length 81 was found to be invalid where all lengths should be valid: %v", e)
 	}
 }

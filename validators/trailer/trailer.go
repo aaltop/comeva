@@ -289,7 +289,7 @@ var keyValueRegex = baseRegexp.MustCompile(fmt.Sprintf(
 	`(?<value>\S[^\r\n$]*)`))
 
 // ResemblesKeyValue reports whether the string (assumed to be a line of text)
-// resembles a git trailer's key-value pair. See [ValidateKeyValue] for proper
+// resembles a git trailer's key-value pair. See [validateKeyValue] for proper
 // validation.
 func (validator *TrailerValidator) ResemblesKeyValue(possibleKeyValue string) bool {
 	return keyValueRegex.MatchString(possibleKeyValue)

@@ -111,10 +111,10 @@ func (validator *MessageValidator) ValidateString(possibleMessage string) (errs 
 // (followed by a space or the end of the line)."
 var trailedEndRegex = regexp.MustCompile(`---(\r?\n)?`)
 
-// ValidateBreakingChange checks whether an exclamation mark (denoting a breaking change)
+// validateBreakingChange checks whether an exclamation mark (denoting a breaking change)
 // in the header is accompanied by a BREAKING-CHANGE trailer key and vice versa.
 // To be run after a message has been processed.
-func (validator *MessageValidator) ValidateBreakingChange() (errs []validators.ValidatorErrorChild) {
+func (validator *MessageValidator) validateBreakingChange() (errs []validators.ValidatorErrorChild) {
 	// hasBreaking reports whether the trailers have a BREAKING-CHANGE key
 	var hasBreaking bool = slices.ContainsFunc(validator.TrailerValidator.Trailers,
 		func(tr trailer.Trailer) bool {
@@ -160,7 +160,7 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (errs
 	// if only header found, fine: return
 	if !scner.Scan() {
 
-		tempErrs = validator.ValidateBreakingChange()
+		tempErrs = validator.validateBreakingChange()
 		validator.Errors = append(validator.Errors, tempErrs...)
 		errs = append(errs, tempErrs...)
 
@@ -242,7 +242,7 @@ func (validator *MessageValidator) ValidateScanner(scanner *bufio.Scanner) (errs
 
 	errs = append(errs, validator.TrailerValidator.ValidateStringWithLine(strings.Join(trailerContent, "\n"), uint(trailerStart))...)
 
-	tempErrs = validator.ValidateBreakingChange()
+	tempErrs = validator.validateBreakingChange()
 	validator.Errors = append(validator.Errors, tempErrs...)
 	errs = append(errs, tempErrs...)
 
