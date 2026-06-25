@@ -2,7 +2,6 @@ package commands
 
 import (
 	help "comeva/internal/comeva/commands/internal/help"
-	flagUtils "comeva/internal/flag"
 	"fmt"
 )
 
@@ -26,8 +25,8 @@ func NewHelpCommand() (helpCommand *Command, e error) {
 	)
 
 	var options = newDefaultFlagOptions()
-	options.AddGroup("Local", flagUtils.GetDefaults(help.OptionalFlagSet))
-	options.AddGroup("Local/Boolean", flagUtils.GetDefaults(help.OptionalBoolFlagSet))
+	options.AddGroupFlagSet("Local", help.OptionalFlagSet)
+	options.AddGroupFlagSet("Local/Boolean", help.OptionalBoolFlagSet)
 	helpMsg, e = NewHelpMessage(
 		"Access the documentation.",
 		"",

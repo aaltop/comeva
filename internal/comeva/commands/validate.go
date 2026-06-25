@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	validate "comeva/internal/comeva/commands/internal/validate"
-	flagUtils "comeva/internal/flag"
 )
 
 // NewValidateCommand returns a [Command] that represents the validator command.
@@ -18,8 +17,8 @@ any possible defaults are used instead.`,
 	)
 
 	var options = newDefaultFlagOptions()
-	options.AddGroup("Optional", flagUtils.GetDefaults(validate.OptionalFlagSet))
-	options.AddGroup("Boolean", flagUtils.GetDefaults(validate.BooleanFlagSet))
+	options.AddGroupFlagSet("Optional", validate.OptionalFlagSet)
+	options.AddGroupFlagSet("Boolean", validate.BooleanFlagSet)
 
 	var helpMessage, _ = NewHelpMessage(
 		"Validate a commit message.",
