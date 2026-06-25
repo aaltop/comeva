@@ -1,4 +1,4 @@
-package utils
+package math
 
 import "testing"
 
@@ -37,7 +37,6 @@ func TestBounds(t *testing.T) {
 	}
 }
 
-
 // NewBounds method correctly checks whether the set bounds are in the correct
 // order.
 func TestBoundsVali(t *testing.T) {
@@ -47,13 +46,13 @@ func TestBoundsVali(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	var bounds Bounds[int]
-	if bounds , err = NewBounds(1, 1, true, false); err == nil {
+	if bounds, err = NewBounds(1, 1, true, false); err == nil {
 		t.Errorf("Expected error for bounds %v", bounds)
 	}
-	if bounds , err = NewBounds(1, 1, false, true); err == nil {
+	if bounds, err = NewBounds(1, 1, false, true); err == nil {
 		t.Errorf("Expected error for bounds %v", bounds)
 	}
-	if bounds , err = NewBounds(1, 1, true, true); err == nil {
+	if bounds, err = NewBounds(1, 1, true, true); err == nil {
 		t.Errorf("Expected error for bounds %v", bounds)
 	}
 }

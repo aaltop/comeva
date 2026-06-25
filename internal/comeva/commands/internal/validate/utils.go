@@ -4,7 +4,7 @@ import (
 	argus "comeva/internal/comeva/args"
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
-	"comeva/internal/utils/flag"
+	"comeva/internal/flag"
 )
 
 var debugLogger = globals.DebugLogger

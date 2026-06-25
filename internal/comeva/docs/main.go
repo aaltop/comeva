@@ -2,7 +2,7 @@ package docs
 
 import (
 	"comeva/internal/comeva/globals"
-	"comeva/internal/utils/io"
+	"comeva/internal/io"
 	"embed"
 	"errors"
 	"fmt"

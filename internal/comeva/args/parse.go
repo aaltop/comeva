@@ -9,9 +9,9 @@ import (
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/globals"
 	exitstate "comeva/internal/exitState"
+	flagUtils "comeva/internal/flag"
 	"comeva/internal/io/ansi"
 	"comeva/internal/logging"
-	flagUtils "comeva/internal/utils/flag"
 )
 
 // flagString represents the string name of a command line flag.

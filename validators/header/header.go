@@ -12,8 +12,8 @@ import (
 	"text/template"
 
 	"comeva/internal/errors"
+	"comeva/internal/math"
 	"comeva/internal/regexp"
-	"comeva/internal/utils"
 	"comeva/validators"
 )
 
@@ -103,7 +103,7 @@ type HeaderValidator struct {
 	// Accepted words for verb.
 	verbs []string
 	// Minimum and maximum.
-	lineLength utils.Bounds[uint]
+	lineLength math.Bounds[uint]
 
 	Errors []validators.ValidatorErrorChild
 
@@ -131,7 +131,7 @@ func (validator *HeaderValidator) Equal(other *HeaderValidator) bool {
 // valid and sets them in the validator, returning a non-nil error
 // if the values are not.
 func (validator *HeaderValidator) SetLineLength(min, max uint) (e error) {
-	bounds, e := utils.NewBounds(min, max, false, false)
+	bounds, e := math.NewBounds(min, max, false, false)
 	if e == nil {
 		validator.lineLength = bounds
 	}

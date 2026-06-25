@@ -1,7 +1,7 @@
 package validators
 
 import (
-	"comeva/internal/utils"
+	"comeva/internal/math"
 	"fmt"
 )
 
@@ -77,7 +77,7 @@ func (e ValidatorError) ErrorString(errorMessage string) (msg string) {
 
 type InvalidLineLengthError struct {
 	ValidatorError
-	Expected utils.Bounds[uint]
+	Expected math.Bounds[uint]
 	Received uint
 }
 

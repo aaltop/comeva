@@ -5,7 +5,7 @@ import (
 	"comeva/internal/comeva/config"
 	"comeva/internal/comeva/docs"
 	exitstate "comeva/internal/exitState"
-	flagUtils "comeva/internal/utils/flag"
+	flagUtils "comeva/internal/flag"
 	"fmt"
 	"strings"
 )

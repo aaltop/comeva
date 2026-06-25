@@ -1,8 +1,8 @@
 package body
 
 import (
+	math "comeva/internal/math"
 	testingUtils "comeva/internal/testing"
-	"comeva/internal/utils"
 	"comeva/validators"
 	"fmt"
 	"slices"
@@ -117,7 +117,7 @@ func TestValidateLine(t *testing.T) {
 	}
 
 	// Bounds with 0,0 should mean no length check
-	validator.lineLength = utils.Bounds[uint]{}
+	validator.lineLength = math.Bounds[uint]{}
 	if e := validator.validateLine(constructor.Line(81), 1); e != nil {
 		t.Errorf("Line of length 81 was found to be invalid where all lengths should be valid: %v", e)
 	}

@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	flagUtils "comeva/internal/utils/flag"
+	flagUtils "comeva/internal/flag"
 )
 
 var FlagSet *flag.FlagSet

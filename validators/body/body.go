@@ -4,6 +4,7 @@ package body
 
 import (
 	"bufio"
+	math "comeva/internal/math"
 	"comeva/internal/utils"
 	"comeva/validators"
 	"io"
@@ -15,7 +16,7 @@ type Body []string
 // BodyValidator validates a commit message's body.
 type BodyValidator struct {
 	// lineLength describes the lower and upper bound of a line's length.
-	lineLength utils.Bounds[uint]
+	lineLength math.Bounds[uint]
 
 	Errors []validators.ValidatorErrorChild
 
@@ -33,8 +34,8 @@ func (validator *BodyValidator) Reset() {
 func NewDefaultBodyValidator() (validator *BodyValidator) {
 	var e error
 	validator = &BodyValidator{}
-	var bounds utils.Bounds[uint]
-	bounds, e = utils.NewBounds(uint(0), uint(0), false, false)
+	var bounds math.Bounds[uint]
+	bounds, e = math.NewBounds(uint(0), uint(0), false, false)
 
 	if e != nil {
 		return
@@ -52,8 +53,8 @@ func NewDefaultBodyValidator() (validator *BodyValidator) {
 // that all values for line lengths are accepted.
 func NewBodyValidator(lineLength [2]uint) (validator *BodyValidator, e error) {
 	validator = NewDefaultBodyValidator()
-	var bounds utils.Bounds[uint]
-	bounds, e = utils.NewBounds(lineLength[0], lineLength[1], false, false)
+	var bounds math.Bounds[uint]
+	bounds, e = math.NewBounds(lineLength[0], lineLength[1], false, false)
 
 	if e != nil {
 		return

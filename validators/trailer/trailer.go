@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"comeva/internal/math"
 	"comeva/internal/regexp"
 	"comeva/internal/utils"
 	"comeva/validators"
@@ -68,7 +69,7 @@ type TrailerValidator struct {
 	optionalKeys KeyMap
 	// continuationIndent specifies how many spaces a value should be indented by.
 	continuationIndent uint
-	lineLength         utils.Bounds[uint]
+	lineLength         math.Bounds[uint]
 
 	Errors []validators.ValidatorErrorChild
 
@@ -143,7 +144,7 @@ func (validator *TrailerValidator) Equal(other *TrailerValidator) bool {
 
 // SetLineLength sets new bounds for line length.
 func (validator *TrailerValidator) SetLineLength(min, max uint) (e error) {
-	h, e := utils.NewBounds(min, max, false, false)
+	h, e := math.NewBounds(min, max, false, false)
 	if e == nil {
 		validator.lineLength = h
 	}

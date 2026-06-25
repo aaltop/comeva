@@ -6,7 +6,7 @@ import (
 	"comeva/internal/comeva/globals"
 	errorHelpers "comeva/internal/errors"
 	exitstate "comeva/internal/exitState"
-	"comeva/internal/utils/flag"
+	"comeva/internal/flag"
 	messageValidation "comeva/validators/message"
 	"errors"
 	"fmt"

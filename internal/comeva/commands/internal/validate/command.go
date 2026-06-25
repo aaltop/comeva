@@ -12,8 +12,8 @@ import (
 	exitstate "comeva/internal/exitState"
 	"comeva/internal/io/ansi"
 
+	"comeva/internal/flag"
 	"comeva/internal/json"
-	"comeva/internal/utils/flag"
 	"fmt"
 	baseIo "io"
 	"os"

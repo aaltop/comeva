@@ -2,7 +2,7 @@ package commands
 
 import (
 	help "comeva/internal/comeva/commands/internal/help"
-	flagUtils "comeva/internal/utils/flag"
+	flagUtils "comeva/internal/flag"
 	"fmt"
 )
 

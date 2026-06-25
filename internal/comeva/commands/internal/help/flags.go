@@ -1,7 +1,7 @@
 package help
 
 import (
-	flagUtils "comeva/internal/utils/flag"
+	flagUtils "comeva/internal/flag"
 	"errors"
 	"flag"
 	"fmt"
