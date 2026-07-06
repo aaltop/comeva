@@ -1,14 +1,15 @@
 package message
 
 import (
-	"comeva/validators/body"
-	"comeva/validators/header"
-	"comeva/validators/trailer"
 	"maps"
+
+	"github.com/aaltop/comeva/validators/body"
+	"github.com/aaltop/comeva/validators/header"
+	"github.com/aaltop/comeva/validators/trailer"
 
 	goccyYaml "github.com/goccy/go-yaml"
 
-	"comeva/internal/yaml"
+	"github.com/aaltop/comeva/internal/yaml"
 )
 
 type messageValidator struct {

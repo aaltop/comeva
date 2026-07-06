@@ -1,8 +1,9 @@
 package header
 
 import (
-	"comeva/validators"
 	"fmt"
+
+	"github.com/aaltop/comeva/validators"
 )
 
 // InvalidError is returned when the header cannot be validated at all.

@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	"comeva/internal/comeva/args"
-	"comeva/internal/comeva/commands/internal"
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
-	exitstate "comeva/internal/exitState"
-	flagUtils "comeva/internal/flag"
-	ioUtils "comeva/internal/io"
-	"comeva/internal/io/ansi"
-	"comeva/internal/yaml"
+	"github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/commands/internal"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
+	flagUtils "github.com/aaltop/comeva/internal/flag"
+	ioUtils "github.com/aaltop/comeva/internal/io"
+	"github.com/aaltop/comeva/internal/io/ansi"
+	"github.com/aaltop/comeva/internal/yaml"
 )
 
 // UsageExample describes a single usage example of a help message.

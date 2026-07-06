@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	validate "comeva/internal/comeva/commands/internal/validate"
+	validate "github.com/aaltop/comeva/internal/comeva/commands/internal/validate"
 )
 
 // NewValidateCommand returns a [Command] that represents the validator command.

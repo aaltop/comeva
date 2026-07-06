@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"os"
 
-	"comeva/internal/errors"
-	exitState "comeva/internal/exitState"
-	"comeva/internal/io/ansi"
-	"comeva/validators"
-	bodyValidation "comeva/validators/body"
-	headerValidation "comeva/validators/header"
-	messageValidation "comeva/validators/message"
-	trailerValidation "comeva/validators/trailer"
+	"github.com/aaltop/comeva/internal/errors"
+	exitState "github.com/aaltop/comeva/internal/exitState"
+	"github.com/aaltop/comeva/internal/io/ansi"
+	"github.com/aaltop/comeva/validators"
+	bodyValidation "github.com/aaltop/comeva/validators/body"
+	headerValidation "github.com/aaltop/comeva/validators/header"
+	messageValidation "github.com/aaltop/comeva/validators/message"
+	trailerValidation "github.com/aaltop/comeva/validators/trailer"
 )
 
 func getHeaderValidator() (headerValidator *headerValidation.HeaderValidator) {

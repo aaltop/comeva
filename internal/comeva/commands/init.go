@@ -1,7 +1,7 @@
 package commands
 
 import (
-	initt "comeva/internal/comeva/commands/internal/init"
+	initt "github.com/aaltop/comeva/internal/comeva/commands/internal/init"
 )
 
 // NewInitCommand returns a [Command] that represents an initialisation command

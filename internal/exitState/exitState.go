@@ -1,9 +1,10 @@
 package exitstate
 
 import (
-	"comeva/internal/io/ansi"
 	"fmt"
 	"os"
+
+	"github.com/aaltop/comeva/internal/io/ansi"
 )
 
 // exitCode describes the exit code passed to os.Exit. Should be kept in the

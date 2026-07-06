@@ -3,9 +3,10 @@
 package io
 
 import (
-	"comeva/internal/io"
-	"comeva/internal/io/ansi"
 	"fmt"
+
+	"github.com/aaltop/comeva/internal/io"
+	"github.com/aaltop/comeva/internal/io/ansi"
 )
 
 // PrintCommitMessage prints the passed message.

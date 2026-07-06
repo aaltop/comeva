@@ -1,8 +1,9 @@
 package commands
 
 import (
-	help "comeva/internal/comeva/commands/internal/help"
 	"fmt"
+
+	help "github.com/aaltop/comeva/internal/comeva/commands/internal/help"
 )
 
 // NewHelpCommand creates a help command.

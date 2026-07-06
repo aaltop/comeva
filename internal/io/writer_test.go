@@ -1,9 +1,10 @@
 package io
 
 import (
-	testingUtils "comeva/internal/testing"
 	"strings"
 	"testing"
+
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func FixtureStringModifier(counter *stringLengthCounter) (modifier Modifier[string]) {

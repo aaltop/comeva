@@ -1,10 +1,10 @@
 package message
 
 import (
-	"comeva/validators"
-	"comeva/validators/body"
-	"comeva/validators/header"
-	"comeva/validators/trailer"
+	"github.com/aaltop/comeva/validators"
+	"github.com/aaltop/comeva/validators/body"
+	"github.com/aaltop/comeva/validators/header"
+	"github.com/aaltop/comeva/validators/trailer"
 )
 
 // ValidatedMessage represents the validated commit message.

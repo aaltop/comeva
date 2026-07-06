@@ -4,20 +4,22 @@ package validate
 
 import (
 	"bufio"
-	argus "comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
-	comevaIo "comeva/internal/comeva/io"
-	"comeva/internal/errors"
-	exitstate "comeva/internal/exitState"
-	"comeva/internal/io/ansi"
 
-	"comeva/internal/flag"
-	"comeva/internal/json"
+	argus "github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	comevaIo "github.com/aaltop/comeva/internal/comeva/io"
+	"github.com/aaltop/comeva/internal/errors"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
+	"github.com/aaltop/comeva/internal/io/ansi"
+
 	"fmt"
 	baseIo "io"
 	"os"
 	"strings"
+
+	"github.com/aaltop/comeva/internal/flag"
+	"github.com/aaltop/comeva/internal/json"
 )
 
 // program acts as the state of the command.

@@ -1,4 +1,4 @@
-module comeva
+module github.com/aaltop/comeva
 
 go 1.25.5
 

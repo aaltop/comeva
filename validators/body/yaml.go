@@ -3,7 +3,7 @@ package body
 import (
 	goccyYaml "github.com/goccy/go-yaml"
 
-	"comeva/internal/yaml"
+	"github.com/aaltop/comeva/internal/yaml"
 )
 
 type bodyValidator struct {

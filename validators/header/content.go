@@ -1,7 +1,7 @@
 package header
 
 import (
-	"comeva/validators"
+	"github.com/aaltop/comeva/validators"
 )
 
 func (validator *HeaderValidator) ValidatedContent() validators.ValidatedContent[Header] {

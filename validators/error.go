@@ -1,8 +1,9 @@
 package validators
 
 import (
-	"comeva/internal/math"
 	"fmt"
+
+	"github.com/aaltop/comeva/internal/math"
 )
 
 // messagePart represents the name of a part of a git commit message.

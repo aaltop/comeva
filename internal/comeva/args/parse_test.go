@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	stringUtils "comeva/internal/strings"
-	testingHelpers "comeva/internal/testing"
+	stringUtils "github.com/aaltop/comeva/internal/strings"
+	testingHelpers "github.com/aaltop/comeva/internal/testing"
 )
 
 var globalFlag = "--help --verbosity 1 --config-file config.yaml --logging-level 14"

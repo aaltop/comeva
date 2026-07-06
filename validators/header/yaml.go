@@ -3,7 +3,7 @@ package header
 import (
 	goccyYaml "github.com/goccy/go-yaml"
 
-	"comeva/internal/yaml"
+	"github.com/aaltop/comeva/internal/yaml"
 )
 
 type headerValidator struct {

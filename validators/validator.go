@@ -3,7 +3,7 @@ package validators
 import (
 	"io"
 
-	"comeva/internal/json"
+	"github.com/aaltop/comeva/internal/json"
 )
 
 type Validator[T any] interface {

@@ -1,10 +1,10 @@
 package validate
 
 import (
-	argus "comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
-	"comeva/internal/flag"
+	argus "github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	"github.com/aaltop/comeva/internal/flag"
 )
 
 var debugLogger = globals.DebugLogger

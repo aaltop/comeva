@@ -1,13 +1,14 @@
 package header
 
 import (
-	"comeva/internal/regexp"
-	testingUtils "comeva/internal/testing"
-	"comeva/validators"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/aaltop/comeva/internal/regexp"
+	testingUtils "github.com/aaltop/comeva/internal/testing"
+	"github.com/aaltop/comeva/validators"
 )
 
 func FixtureValidator() *HeaderValidator {

@@ -1,10 +1,11 @@
 package body
 
 import (
-	testingUtils "comeva/internal/testing"
 	"fmt"
 	"strings"
 	"testing"
+
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func errorMsgFmt(expected, received any) string {

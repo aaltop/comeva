@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
 )
 
 // JoinGlobalArguments joins the global flags and configuration file values.

@@ -2,16 +2,17 @@ package message
 
 import (
 	"bufio"
-	"comeva/internal/utils"
-	"comeva/validators"
-	"comeva/validators/body"
-	"comeva/validators/header"
-	"comeva/validators/trailer"
 	"fmt"
 	"io"
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/aaltop/comeva/internal/utils"
+	"github.com/aaltop/comeva/validators"
+	"github.com/aaltop/comeva/validators/body"
+	"github.com/aaltop/comeva/validators/header"
+	"github.com/aaltop/comeva/validators/trailer"
 )
 
 // MessageValidator validates a git commit message.

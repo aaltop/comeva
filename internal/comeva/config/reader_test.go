@@ -1,9 +1,10 @@
 package config
 
 import (
-	testingHelpers "comeva/internal/testing"
 	"fmt"
 	"testing"
+
+	testingHelpers "github.com/aaltop/comeva/internal/testing"
 )
 
 func FixtureConfig() (config *Config) {

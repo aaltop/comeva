@@ -1,5 +1,5 @@
 package init
 
-import "comeva/internal/io/ansi"
+import "github.com/aaltop/comeva/internal/io/ansi"
 
 var colorSchemes = ansi.BasicColorSchemes

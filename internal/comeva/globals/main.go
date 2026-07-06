@@ -2,12 +2,13 @@
 package globals
 
 import (
-	"comeva/internal/logging"
 	baseErrors "errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/aaltop/comeva/internal/logging"
 )
 
 // CONFIG_BASE_PATH is the base path of the config directory for the program.

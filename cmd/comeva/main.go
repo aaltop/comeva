@@ -1,13 +1,14 @@
 package main
 
 import (
-	"comeva/internal/comeva/args"
-	"comeva/internal/comeva/commands"
-	"comeva/internal/comeva/globals"
-	"comeva/internal/errors"
-	exitstate "comeva/internal/exitState"
 	"fmt"
 	"os"
+
+	"github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/commands"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	"github.com/aaltop/comeva/internal/errors"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
 )
 
 type program struct {

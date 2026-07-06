@@ -1,17 +1,18 @@
 package message
 
 import (
-	"comeva/validators"
-	"comeva/validators/header"
-	"comeva/validators/trailer"
 	baseErrors "errors"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
 
-	"comeva/internal/errors"
-	testingUtils "comeva/internal/testing"
+	"github.com/aaltop/comeva/validators"
+	"github.com/aaltop/comeva/validators/header"
+	"github.com/aaltop/comeva/validators/trailer"
+
+	"github.com/aaltop/comeva/internal/errors"
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func FixtureValidator() *MessageValidator {

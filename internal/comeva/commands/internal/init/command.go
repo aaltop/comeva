@@ -1,17 +1,18 @@
 package init
 
 import (
-	argus "comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
-	errorHelpers "comeva/internal/errors"
-	exitstate "comeva/internal/exitState"
-	"comeva/internal/flag"
-	messageValidation "comeva/validators/message"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+
+	argus "github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	errorHelpers "github.com/aaltop/comeva/internal/errors"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
+	"github.com/aaltop/comeva/internal/flag"
+	messageValidation "github.com/aaltop/comeva/validators/message"
 )
 
 type program struct {

@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
-	exitstate "comeva/internal/exitState"
-	flagUtils "comeva/internal/flag"
-	"comeva/internal/io/ansi"
-	"comeva/internal/logging"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
+	flagUtils "github.com/aaltop/comeva/internal/flag"
+	"github.com/aaltop/comeva/internal/io/ansi"
+	"github.com/aaltop/comeva/internal/logging"
 )
 
 // flagString represents the string name of a command line flag.

@@ -3,10 +3,10 @@ package commands
 import (
 	"fmt"
 
-	"comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	"comeva/internal/errors"
-	exitstate "comeva/internal/exitState"
+	"github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/errors"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
 )
 
 // NewBaseCommand returns a [Command] that represents the base command

@@ -1,7 +1,7 @@
 package message
 
 import (
-	"comeva/validators"
+	"github.com/aaltop/comeva/validators"
 )
 
 type UnexpectedEOFError struct {

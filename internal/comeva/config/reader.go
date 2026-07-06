@@ -3,10 +3,10 @@
 package config
 
 import (
-	"comeva/internal/comeva/globals"
-	"comeva/internal/equal"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	"github.com/aaltop/comeva/internal/equal"
 
-	"comeva/internal/yaml"
+	"github.com/aaltop/comeva/internal/yaml"
 
 	goccyYaml "github.com/goccy/go-yaml"
 )

@@ -1,13 +1,14 @@
 package body
 
 import (
-	math "comeva/internal/math"
-	testingUtils "comeva/internal/testing"
-	"comeva/validators"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
+
+	math "github.com/aaltop/comeva/internal/math"
+	testingUtils "github.com/aaltop/comeva/internal/testing"
+	"github.com/aaltop/comeva/validators"
 )
 
 func FixtureValidator() *BodyValidator {

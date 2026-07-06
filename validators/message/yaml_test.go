@@ -1,14 +1,15 @@
 package message
 
 import (
-	"comeva/validators/body"
-	"comeva/validators/header"
-	"comeva/validators/trailer"
 	"fmt"
 	"strings"
 	"testing"
 
-	testingUtils "comeva/internal/testing"
+	"github.com/aaltop/comeva/validators/body"
+	"github.com/aaltop/comeva/validators/header"
+	"github.com/aaltop/comeva/validators/trailer"
+
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func errorMsgFmt(expected, received any) string {

@@ -1,7 +1,7 @@
 package body
 
 import (
-	"comeva/validators"
+	"github.com/aaltop/comeva/validators"
 )
 
 func (validator *BodyValidator) ValidatedContent() validators.ValidatedContent[Body] {

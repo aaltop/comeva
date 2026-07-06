@@ -1,8 +1,9 @@
 package trailer
 
 import (
-	"comeva/validators"
 	"fmt"
+
+	"github.com/aaltop/comeva/validators"
 )
 
 // InvalidKeyError is returned when a non-required and non-optional but otherwise

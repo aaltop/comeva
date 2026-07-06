@@ -7,7 +7,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 
-	testingUtils "comeva/internal/testing"
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func errorMsgFmt(expected, received any) string {

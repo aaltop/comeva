@@ -11,10 +11,10 @@ import (
 	"strings"
 	"text/template"
 
-	"comeva/internal/errors"
-	"comeva/internal/math"
-	"comeva/internal/regexp"
-	"comeva/validators"
+	"github.com/aaltop/comeva/internal/errors"
+	"github.com/aaltop/comeva/internal/math"
+	"github.com/aaltop/comeva/internal/regexp"
+	"github.com/aaltop/comeva/validators"
 )
 
 var regexGroups = struct {

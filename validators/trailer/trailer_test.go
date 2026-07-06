@@ -2,15 +2,16 @@ package trailer
 
 import (
 	"bufio"
-	"comeva/validators"
 	baseErrors "errors"
 	"fmt"
 	"strings"
 	"testing"
 
-	errors "comeva/internal/errors"
-	"comeva/internal/regexp"
-	testingUtils "comeva/internal/testing"
+	"github.com/aaltop/comeva/validators"
+
+	errors "github.com/aaltop/comeva/internal/errors"
+	"github.com/aaltop/comeva/internal/regexp"
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func FixtureValidator() *TrailerValidator {

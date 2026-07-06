@@ -1,11 +1,12 @@
 package help
 
 import (
-	flagUtils "comeva/internal/flag"
 	"errors"
 	"flag"
 	"fmt"
 	"strings"
+
+	flagUtils "github.com/aaltop/comeva/internal/flag"
 )
 
 var FlagSet *flag.FlagSet

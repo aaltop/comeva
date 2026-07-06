@@ -1,13 +1,14 @@
 package help
 
 import (
-	argus "comeva/internal/comeva/args"
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/docs"
-	exitstate "comeva/internal/exitState"
-	flagUtils "comeva/internal/flag"
 	"fmt"
 	"strings"
+
+	argus "github.com/aaltop/comeva/internal/comeva/args"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/docs"
+	exitstate "github.com/aaltop/comeva/internal/exitState"
+	flagUtils "github.com/aaltop/comeva/internal/flag"
 )
 
 type program struct {

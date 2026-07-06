@@ -10,10 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"comeva/internal/math"
-	"comeva/internal/regexp"
-	"comeva/internal/utils"
-	"comeva/validators"
+	"github.com/aaltop/comeva/internal/math"
+	"github.com/aaltop/comeva/internal/regexp"
+	"github.com/aaltop/comeva/internal/utils"
+	"github.com/aaltop/comeva/validators"
 )
 
 // Key represents a trailer key.

@@ -1,8 +1,6 @@
 package docs
 
 import (
-	"comeva/internal/comeva/globals"
-	"comeva/internal/io"
 	"embed"
 	"errors"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/aaltop/comeva/internal/comeva/globals"
+	"github.com/aaltop/comeva/internal/io"
 )
 
 //go:embed docs/*

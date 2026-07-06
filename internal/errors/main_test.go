@@ -1,10 +1,11 @@
 package errors
 
 import (
-	testingUtils "comeva/internal/testing"
 	"errors"
 	baseErrors "errors"
 	"testing"
+
+	testingUtils "github.com/aaltop/comeva/internal/testing"
 )
 
 func handleReturn(in string, err error) (out string, e error) {

@@ -4,11 +4,12 @@ package body
 
 import (
 	"bufio"
-	math "comeva/internal/math"
-	"comeva/internal/utils"
-	"comeva/validators"
 	"io"
 	"strings"
+
+	math "github.com/aaltop/comeva/internal/math"
+	"github.com/aaltop/comeva/internal/utils"
+	"github.com/aaltop/comeva/validators"
 )
 
 type Body []string

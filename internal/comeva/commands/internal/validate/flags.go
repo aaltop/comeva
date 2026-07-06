@@ -1,15 +1,16 @@
 package validate
 
 import (
-	"comeva/internal/comeva/config"
-	"comeva/internal/comeva/globals"
 	"errors"
 	"flag"
 	"fmt"
 	"slices"
 	"strings"
 
-	flagUtils "comeva/internal/flag"
+	"github.com/aaltop/comeva/internal/comeva/config"
+	"github.com/aaltop/comeva/internal/comeva/globals"
+
+	flagUtils "github.com/aaltop/comeva/internal/flag"
 )
 
 var FlagSet *flag.FlagSet

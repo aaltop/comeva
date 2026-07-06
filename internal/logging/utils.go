@@ -1,9 +1,10 @@
 package logging
 
 import (
-	"comeva/internal/io"
-	"comeva/internal/io/ansi"
 	baseIo "io"
+
+	"github.com/aaltop/comeva/internal/io"
+	"github.com/aaltop/comeva/internal/io/ansi"
 )
 
 // CreateColoredLogger creates a coloured logger which has suitable coloured

@@ -2,10 +2,11 @@
 package logging
 
 import (
-	errorHelpers "comeva/internal/errors"
 	"io"
 	"log"
 	"os"
+
+	errorHelpers "github.com/aaltop/comeva/internal/errors"
 )
 
 // LevelLogger contains loggers with levels of criticality.
