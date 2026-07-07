@@ -13,12 +13,12 @@ type modifierFunc[T any] func(in T) (out T)
 
 type modifier[T any] []modifierFunc[T]
 
-// Modifier composes a number of modifiers functions.
+// Modifier composes a number of modifier functions.
 type Modifier[T any] interface {
 	// Add adds the modifier functions in the given order to the modifier.
 	Add(modifiers ...modifierFunc[T])
 	// Apply applies the modifiers to the passed value. If no
-	// modifiers have been added using [TextModifier.Add], this
+	// modifiers have been added using [Modifier.Add], this
 	// should be identity.
 	Apply(in T) (out T)
 }

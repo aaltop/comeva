@@ -102,10 +102,7 @@ func (logger *LevelLogger) SetLevel(level *int) (e error) {
 
 // LevelConfig is configuration for a particular level of a logger.
 type LevelConfig struct {
-	// Output is the output used for a given level. This is intended to be
-	// akin to middleware where the writers do not directly write
-	// the output to anywhere, but instead perform some extra operation
-	// on the output before passing it on.
+	// Out is the output used for a given level.
 	Out io.Writer
 
 	// Level is used as the logging level. If left nil, the level
