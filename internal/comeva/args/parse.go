@@ -20,12 +20,13 @@ type flagString string
 
 // // GlobalFlagNames holds the string name of each global command line flag.
 var GlobalFlagNames = struct {
-	Help, Verbosity, ConfigFile, LoggingLevel flagString
+	Help, Verbosity, ConfigFile, LoggingLevel, Version flagString
 }{
 	Help:         "help",
 	Verbosity:    "verbosity",
 	ConfigFile:   "config-file",
 	LoggingLevel: "logging-level",
+	Version:      "version",
 }
 
 var globalFlagSet = flag.NewFlagSet("", flag.ContinueOnError)
@@ -50,6 +51,12 @@ var loggingLevel = globalFlagSet.Int(
 	),
 )
 
+var version = globalFlagSet.Bool(
+	string(GlobalFlagNames.Version),
+	false,
+	"Print the current version of the program.",
+)
+
 type GlobalFlags struct {
 	// Help reports whether a help flag was passed.
 	Help bool
@@ -59,12 +66,14 @@ type GlobalFlags struct {
 	ConfigFile string
 	// LoggingLevel is the logging level.
 	LoggingLevel int
+	// Version reports whether the version flag was passed.
+	Version bool
 }
 
 // GlobalPassedFlags reports which flags of [GlobalFlags] were passed; see
 // [GetPassedGlobalFlags].
 type PassedGlobalFlags struct {
-	Help, Verbosity, ConfigFile, LoggingLevel bool
+	Help, Verbosity, ConfigFile, LoggingLevel, Version bool
 }
 
 func NewDefaultGlobalFlags() (gFlags *GlobalFlags) {
@@ -98,6 +107,7 @@ func ParseGlobalFlags(args []string) (gFlags *GlobalFlags, passedFlags *PassedGl
 	gFlags.Verbosity = *verbosity
 	gFlags.ConfigFile = *configFile
 	gFlags.LoggingLevel = *loggingLevel
+	gFlags.Version = *version
 
 	return gFlags, passedFlags, globalFlagSet.Args()
 }
@@ -165,6 +175,7 @@ func GetPassedGlobalFlags(global map[string]bool) (passed *PassedGlobalFlags) {
 	passed.Help = global[string(GlobalFlagNames.Help)]
 	passed.LoggingLevel = global[string(GlobalFlagNames.LoggingLevel)]
 	passed.Verbosity = global[string(GlobalFlagNames.Verbosity)]
+	passed.Version = global[string(GlobalFlagNames.Version)]
 	return
 }
 
@@ -180,6 +191,7 @@ func JoinGlobalArguments(
 	joined.Verbosity = globalArgs.Verbosity
 	joined.ConfigFile = globalArgs.ConfigFile
 	joined.LoggingLevel = globalArgs.LoggingLevel
+	joined.Version = globalArgs.Version
 
 	if !passedGlobal.Verbosity && passedConfig.Verbosity {
 		joined.Verbosity = *conf.Verbosity

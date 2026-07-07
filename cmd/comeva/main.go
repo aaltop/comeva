@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/aaltop/comeva/internal/errors"
 	exitstate "github.com/aaltop/comeva/internal/exitState"
 )
+
+//go:embed version.txt
+var version string
 
 type program struct {
 }
@@ -26,6 +30,11 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 
 	var base = errors.Panic2(commands.NewBaseCommand())
 	var sub *commands.Command = base.GetSubCommand(cmdArgs.Commands)
+	if cmdArgs.PassedGlobalFlags.Version {
+		fmt.Println(version)
+		return
+	}
+
 	if sub != nil {
 		extState = sub.Execute(cmdArgs)
 	} else {
@@ -33,6 +42,7 @@ func (prog *program) main() (extState *exitstate.ExitState) {
 			fmt.Println(base.Help())
 			return
 		}
+
 		// not unsuccessful per se, so don't set exitState
 		globals.ErrorLogger.Error().Printf("Sub-command '%v' not found.", cmdArgs.Commands)
 		fmt.Println(base.Help())
