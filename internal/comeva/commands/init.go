@@ -9,10 +9,11 @@ import (
 func NewInitCommand() (initCommand *Command, e error) {
 
 	var hlpMsgUsage = &HelpMessageUsage{}
-	hlpMsgUsage.AddExample("init", "Use default values to initialise.")
+	hlpMsgUsage.AddExample("init", "Use default values to initialise configuration files in ./.comeva/.")
+	hlpMsgUsage.AddExample("init --global", "Use default values to initialise configuration files in a global, OS-dependent configuration location.")
 	var hlpMsg *HelpMessage
 	var flagOptions = newDefaultFlagOptions()
-	flagOptions.AddGroupFlagSet("Optional/Boolean", initt.FlagSet)
+	flagOptions.AddGroupFlagSet("Local/Boolean", initt.FlagSet)
 	hlpMsg, e = NewHelpMessage(
 		"Initialise directory state related to the program.",
 		`Creates any missing configuration files in the current directory and fills them with

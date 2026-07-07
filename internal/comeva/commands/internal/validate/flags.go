@@ -36,13 +36,18 @@ var flagNames = struct {
 var validatorConfigFile = OptionalFlagSet.String(
 	string(flagNames.ValidatorConfigFile), globals.VALIDATOR_CONFIG_PATH,
 	"File path for configuration of validators.")
-var commitFile = OptionalFlagSet.String(string(flagNames.CommitFile), globals.COMMIT_MESSAGE_PATH, "File path for commit file. The special value '-' indicates stdin, allowing piping.")
+var commitFile = OptionalFlagSet.String(
+	string(flagNames.CommitFile),
+	globals.COMMIT_MESSAGE_PATH,
+	"File path for commit file. The special value '-' indicates stdin, allowing piping.")
 
 var comSep = commitSep("")
 
 func init() {
 	BooleanFlagSet.Var(&comSep, string(flagNames.CommitSeparator),
-		"Separator when validating multiple commits, `string`-valued. Changes the program to assume that the input will have messages separated by this separator, and process all the messages.")
+		"Separator when validating multiple commits, `string`-valued. "+
+			`Changes the program to assume that the input will have messages
+separated by this separator, and process all the messages.`)
 
 	FlagSet = flagUtils.Combine(OptionalFlagSet, BooleanFlagSet)
 }
