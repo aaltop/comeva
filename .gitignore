@@ -9,13 +9,12 @@
 # ------------
 
 !validators
-!utils
-!misc
-
 !internal
 !cmd
 
 !scripts
+
+!.github
 
 # DIRECTORIES
 # ============
@@ -29,6 +28,8 @@
 !TODO.md
 
 !LICENSE
+
+!zensical.toml
 
 # FILES
 # ============
